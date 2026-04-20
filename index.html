@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>חתונת מתן ופריאל | 28.6.2026</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700&family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Heebo', sans-serif;
+            background-color: #F5F0E8;
+            color: #8B6914;
+            line-height: 1.6;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Watercolor Background Blobs */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse 600px 400px at 85% 15%, rgba(123, 167, 188, 0.1) 0%, transparent 70%),
+                radial-gradient(ellipse 700px 500px at 10% 70%, rgba(122, 140, 94, 0.09) 0%, transparent 70%),
+                radial-gradient(ellipse 500px 600px at 20% 30%, rgba(196, 149, 106, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Frank Ruhl Libre', serif;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Edit Mode Button */
+        .edit-mode-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background-color: #7BA7BC;
+            color: #FFFFFF;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            z-index: 999;
+            transition: all 0.3s;
+            font-family: 'Heebo', sans-serif;
+        }
+
+        .edit-mode-btn:hover {
+            background-color: #6A95A8;
+            box-shadow: 0 4px 12px rgba(123, 167, 188, 0.3);
+        }
+
+        /* Edit Mode Panel */
+        .edit-panel {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .edit-panel.active {
+            display: flex;
+        }
+
+        .edit-panel-content {
+            background-color: #FFFFFF;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .edit-panel-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #8B6914;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .edit-panel-section {
+            margin-bottom: 20px;
+        }
+
+        .edit-panel-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #8B6914;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .edit-hero-upload {
+            border: 2px dashed #7BA7BC;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-color: #F5F0E8;
+        }
+
+        .edit-hero-upload:hover {
+            background-color: #EFE8D8;
+            border-color: #6A95A8;
+        }
+
+        .edit-hero-upload.dragover {
+            background-color: #E8F0F5;
+            border-color: #6A95A8;
+        }
+
+        .edit-scale-slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(to right, #D4B896, #7BA7BC);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .edit-scale-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #8B6914;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .edit-scale-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #8B6914;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .edit-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .edit-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Heebo', sans-serif;
+        }
+
+        .edit-btn-save {
+            background-color: #7BA7BC;
+            color: #FFFFFF;
+        }
+
+        .edit-btn-save:hover {
+            background-color: #6A95A8;
+        }
+
+        .edit-btn-exit {
+            background-color: transparent;
+            color: #8B6914;
+            border: 2px solid #8B6914;
+        }
+
+        .edit-btn-exit:hover {
+            background-color: #F5F0E8;
+        }
+
+        /* Botanical Decorations */
+        .leaf-decoration {
+            animation: sway 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes sway {
+            from { transform: rotate(-3deg); }
+            to { transform: rotate(3deg); }
+        }
+
+        .leaf-top-left {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 60px;
+            height: 60px;
+            opacity: 0.6;
+        }
+
+        .leaf-top-right {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            opacity: 0.6;
+        }
+
+        .leaf-divider {
+            text-align: center;
+            margin: 30px 0;
+            opacity: 0.5;
+            font-size: 24px;
+            letter-spacing: 8px;
+        }
+
+        /* Header */
+        header {
+            background-color: #F5F0E8;
+            padding: 40px 20px 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        /* Hero Section - Circular Frame */
+        .hero-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            margin: 0 auto 30px;
+        }
+
+        @media (min-width: 768px) {
+            .hero-container {
+                width: 340px;
+                height: 340px;
+            }
+        }
+
+        .hero-circle {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            overflow: hidden;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.2));
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1), inset 0 2px 8px rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .hero-circle:hover {
+            transform: scale(1.02);
+        }
+
+        .hero-circle img {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            object-position: center;
+        }
+
+        .hero-circle-placeholder {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #8B6914;
+            font-size: 48px;
+            opacity: 0.3;
+        }
+
+        /* Olive Leaf Wreath SVG */
+        .hero-wreath {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120%;
+            height: 120%;
+            z-index: 0;
+        }
+
+        .hero-circle img {
+            z-index: 1;
+        }
+
+        /* Couple Names */
+        .couple-names {
+            font-size: 48px;
+            font-weight: 700;
+            color: #8B6914;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .couple-names span {
+            font-size: 28px;
+            font-weight: 300;
+        }
+
+        .subtitle {
+            color: #8B6914;
+            font-size: 14px;
+            line-height: 1.8;
+            margin-bottom: 20px;
+            opacity: 0.85;
+            position: relative;
+            z-index: 2;
+        }
+
+        .divider {
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #8B6914, transparent);
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Main Content */
+        main {
+            padding: 40px 20px;
+        }
+
+        .card {
+            background-color: #FFFFFF;
+            border: 2px solid #D4B896;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .card:nth-child(odd) {
+            border-color: #D4B896;
+        }
+
+        .card:nth-child(even) {
+            border-color: #7BA7BC;
+        }
+
+        .card-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #8B6914;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .card-divider {
+            width: 40px;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #8B6914, transparent);
+            margin: 0 auto 20px;
+        }
+
+        /* Event Details */
+        .event-detail {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: flex-start;
+        }
+
+        .event-detail-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .event-detail-text {
+            flex: 1;
+        }
+
+        .event-detail-title {
+            font-weight: 600;
+            color: #8B6914;
+            margin-bottom: 3px;
+        }
+
+        .event-detail-subtitle {
+            font-size: 12px;
+            color: #8B6914;
+            opacity: 0.7;
+        }
+
+        /* Buttons */
+        button, a.btn {
+            display: inline-block;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Heebo', sans-serif;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background-color: #8B6914;
+            color: #F5F0E8;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .btn-primary:hover {
+            background-color: #7A5C0F;
+            box-shadow: 0 4px 12px rgba(139, 105, 20, 0.2);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: #7BA7BC;
+            border: 2px solid #7BA7BC;
+            width: 100%;
+        }
+
+        .btn-secondary:hover {
+            background-color: #F0F5F8;
+        }
+
+        .btn-small {
+            padding: 10px 16px;
+            font-size: 14px;
+        }
+
+        /* Countdown */
+        .countdown-container {
+            background-color: #F5F0E8;
+            border: 2px solid #7BA7BC;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .countdown-title {
+            font-size: 22px;
+            color: #8B6914;
+            margin-bottom: 20px;
+        }
+
+        .countdown-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        .countdown-item {
+            background-color: #FFFFFF;
+            border: 2px solid #7BA7BC;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .countdown-number {
+            font-size: 28px;
+            font-weight: 700;
+            color: #7BA7BC;
+            font-family: 'Frank Ruhl Libre', serif;
+        }
+
+        .countdown-label {
+            font-size: 11px;
+            color: #8B6914;
+            margin-top: 8px;
+            opacity: 0.7;
+        }
+
+        /* RSVP Form */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #8B6914;
+            margin-bottom: 8px;
+        }
+
+        input[type="text"],
+        input[type="tel"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #8B6914;
+            border-radius: 8px;
+            font-family: 'Heebo', sans-serif;
+            font-size: 14px;
+            color: #8B6914;
+            background-color: #FFFFFF;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="tel"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #7BA7BC;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* Step Indicators */
+        .step-indicators {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .step-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #D4B896;
+            transition: background-color 0.3s;
+        }
+
+        .step-dot.active {
+            background-color: #8B6914;
+        }
+
+        /* Attendance Buttons */
+        .attendance-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .attendance-btn {
+            padding: 16px;
+            border: 2px solid #8B6914;
+            background-color: #FFFFFF;
+            color: #8B6914;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .attendance-btn:hover {
+            background-color: #F5F0E8;
+        }
+
+        .attendance-btn.selected-yes {
+            background-color: #E8F5F8;
+            border-color: #7BA7BC;
+            color: #7BA7BC;
+        }
+
+        .attendance-btn.selected-no {
+            background-color: #FCE4EC;
+            border-color: #E91E63;
+            color: #C2185B;
+        }
+
+        /* Guest Count */
+        .guest-count-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .guest-count-btn {
+            padding: 12px;
+            border: 2px solid #8B6914;
+            background-color: #FFFFFF;
+            color: #8B6914;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .guest-count-btn:hover {
+            background-color: #F5F0E8;
+        }
+
+        .guest-count-btn.selected {
+            background-color: #7BA7BC;
+            color: #FFFFFF;
+            border-color: #7BA7BC;
+        }
+
+        /* Thank You Message */
+        .thank-you-message {
+            text-align: center;
+            padding: 30px 0;
+        }
+
+        .thank-you-emoji {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        .thank-you-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #8B6914;
+            margin-bottom: 10px;
+        }
+
+        .thank-you-subtext {
+            font-size: 14px;
+            color: #8B6914;
+            opacity: 0.75;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background-color: #FFFFFF;
+            border: 2px solid #D4B896;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #8B6914;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #8B6914;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            opacity: 0.7;
+        }
+
+        /* Gift Modal Tabs */
+        .gift-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .gift-tab {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #8B6914;
+            background-color: #FFFFFF;
+            color: #8B6914;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .gift-tab.active {
+            background-color: #8B6914;
+            color: #F5F0E8;
+        }
+
+        .gift-tab-content {
+            display: none;
+            text-align: center;
+        }
+
+        .gift-tab-content.active {
+            display: block;
+        }
+
+        .qr-placeholder {
+            background-color: #F5EDD8;
+            border: 2px dashed #8B6914;
+            border-radius: 8px;
+            padding: 40px;
+            margin-bottom: 20px;
+            color: #8B6914;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .qr-placeholder img {
+            max-width: 250px;
+            width: 100%;
+            height: auto;
+        }
+
+        .gift-text {
+            font-size: 14px;
+            color: #8B6914;
+            margin-top: 15px;
+        }
+
+        /* FAQ */
+        .faq-section {
+            margin-bottom: 30px;
+        }
+
+        .faq-item {
+            background-color: #FFFFFF;
+            border: 2px solid #D4B896;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .faq-item:nth-child(odd) {
+            border-color: #D4B896;
+        }
+
+        .faq-item:nth-child(even) {
+            border-color: #7BA7BC;
+        }
+
+        .faq-question {
+            padding: 16px;
+            background-color: #FFFFFF;
+            border: none;
+            width: 100%;
+            text-align: right;
+            font-weight: 600;
+            color: #8B6914;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.3s;
+        }
+
+        .faq-question:hover {
+            background-color: #F5F0E8;
+        }
+
+        .faq-chevron {
+            display: inline-block;
+            transition: transform 0.3s;
+        }
+
+        .faq-chevron.open {
+            transform: rotate(180deg);
+        }
+
+        .faq-answer {
+            display: none;
+            padding: 16px;
+            border-top: 2px solid #D4B896;
+            color: #8B6914;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .faq-answer.show {
+            display: block;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            border-top: 2px solid #D4B896;
+            margin-top: 40px;
+            position: relative;
+        }
+
+        .footer-decoration {
+            font-size: 24px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+            letter-spacing: 8px;
+        }
+
+        .footer-text {
+            font-size: 13px;
+            color: #8B6914;
+            opacity: 0.8;
+        }
+
+        /* Hidden */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .couple-names {
+                font-size: 36px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .countdown-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .guest-count-buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .leaf-top-left, .leaf-top-right {
+                width: 50px;
+                height: 50px;
+            }
+
+            header {
+                padding: 30px 20px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Edit Mode Button -->
+    <button class="edit-mode-btn" onclick="openEditMode()">✏️ עריכה</button>
+
+    <!-- Edit Mode Panel -->
+    <div id="editPanel" class="edit-panel">
+        <div class="edit-panel-content">
+            <div class="edit-panel-title">עריכת תמונה</div>
+
+            <div class="edit-panel-section">
+                <label class="edit-panel-label">העלו תמונה</label>
+                <div class="edit-hero-upload" id="editHeroUpload" ondrop="handleEditDrop(event)" ondragover="handleEditDragOver(event)" ondragleave="handleEditDragLeave(event)">
+                    <div style="font-size: 32px; margin-bottom: 10px;">📷</div>
+                    <div>גררו תמונה או לחצו להעלאה</div>
+                </div>
+                <input type="file" id="editHeroInput" accept="image/*" style="display: none;" onchange="handleEditImageSelect(event)">
+            </div>
+
+            <div class="edit-panel-section">
+                <label class="edit-panel-label">גודל התמונה</label>
+                <input type="range" id="editScaleSlider" class="edit-scale-slider" min="50" max="150" value="100" oninput="updateEditScale()">
+            </div>
+
+            <div class="edit-buttons">
+                <button class="edit-btn edit-btn-save" onclick="saveEditMode()">שמור 💾</button>
+                <button class="edit-btn edit-btn-exit" onclick="closeEditMode()">יציאה מעריכה</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <!-- Leaf Decorations -->
+        <svg class="leaf-decoration leaf-top-left" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <path d="M50 10 Q70 30 60 50 Q70 70 50 90 Q30 70 40 50 Q30 30 50 10" fill="#7A8C5E" opacity="0.7"/>
+            <path d="M50 20 Q65 35 58 50 Q65 65 50 80 Q35 65 42 50 Q35 35 50 20" fill="#5C7A4E"/>
+        </svg>
+
+        <svg class="leaf-decoration leaf-top-right" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <path d="M50 10 Q70 30 60 50 Q70 70 50 90 Q30 70 40 50 Q30 30 50 10" fill="#7A8C5E" opacity="0.7"/>
+            <path d="M50 20 Q65 35 58 50 Q65 65 50 80 Q35 65 42 50 Q35 35 50 20" fill="#5C7A4E"/>
+        </svg>
+
+        <div class="container">
+            <!-- Hero Section - Circular Frame -->
+            <div class="hero-container" onclick="openEditMode()">
+                <svg class="hero-wreath" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Olive leaf wreath -->
+                    <g opacity="0.6">
+                        <ellipse cx="50" cy="50" rx="48" ry="48" fill="none" stroke="#7A8C5E" stroke-width="1" stroke-dasharray="5,5"/>
+                        <path d="M30 20 Q35 15 40 18 Q38 25 30 30" fill="#7A8C5E" opacity="0.5"/>
+                        <path d="M70 20 Q75 15 80 18 Q78 25 70 30" fill="#7A8C5E" opacity="0.5"/>
+                        <path d="M20 50 Q15 45 15 55 Q20 58 25 55" fill="#7A8C5E" opacity="0.5"/>
+                        <path d="M85 50 Q90 45 90 55 Q85 58 80 55" fill="#7A8C5E" opacity="0.5"/>
+                        <path d="M30 80 Q35 85 40 82 Q38 75 30 70" fill="#7A8C5E" opacity="0.5"/>
+                        <path d="M70 80 Q75 85 80 82 Q78 75 70 70" fill="#7A8C5E" opacity="0.5"/>
+                    </g>
+                </svg>
+                <div class="hero-circle">
+                    <img id="heroImage" src="" alt="תמונת החתונה" style="display: none;">
+                    <div class="hero-circle-placeholder" id="heroPlaceholder">📷</div>
+                </div>
+            </div>
+
+            <!-- Couple Names -->
+            <div class="couple-names">
+                מתן <span>&amp;</span> פריאל
+            </div>
+
+            <!-- Subtitle -->
+            <div class="subtitle">
+                אנחנו שמחים להזמין אתכם לחגוג<br>את החתונה שלנו
+            </div>
+
+            <!-- Divider -->
+            <div class="divider"></div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <!-- Event Details Card -->
+        <div class="card">
+            <div class="card-title">פרטי האירוע</div>
+            <div class="card-divider"></div>
+
+            <div class="event-detail">
+                <div class="event-detail-icon">📅</div>
+                <div class="event-detail-text">
+                    <div class="event-detail-title">יום ראשון, י״ג תמוז תשפ״ו</div>
+                    <div class="event-detail-subtitle">28.6.2026</div>
+                </div>
+            </div>
+
+            <div class="event-detail">
+                <div class="event-detail-icon">🥂</div>
+                <div class="event-detail-text">
+                    <div class="event-detail-title">קבלת פנים</div>
+                    <div class="event-detail-subtitle">18:00</div>
+                </div>
+            </div>
+
+            <div class="event-detail">
+                <div class="event-detail-icon">💍</div>
+                <div class="event-detail-text">
+                    <div class="event-detail-title">חופה וקידושין</div>
+                    <div class="event-detail-subtitle">19:00 (לפני שקיעה)</div>
+                </div>
+            </div>
+
+            <div class="event-detail">
+                <div class="event-detail-icon">📍</div>
+                <div class="event-detail-text">
+                    <div class="event-detail-title">אולם ארבע עונות</div>
+                    <div class="event-detail-subtitle">קיבוץ ברור חיל</div>
+                </div>
+            </div>
+
+            <a href="https://waze.com/ul?q=אולם+ארבע+עונות+קיבוץ+ברור+חיל" target="_blank" class="btn btn-primary">
+                נווט ב-Waze 📍
+            </a>
+        </div>
+
+        <!-- Leaf Divider -->
+        <div class="leaf-divider">🌿 🍃 🌿</div>
+
+        <!-- Countdown Timer -->
+        <div class="countdown-container">
+            <div class="countdown-title">⏳ עוד כמה זמן?</div>
+            <div class="countdown-grid">
+                <div class="countdown-item">
+                    <div class="countdown-number" id="days">0</div>
+                    <div class="countdown-label">ימים</div>
+                </div>
+                <div class="countdown-item">
+                    <div class="countdown-number" id="hours">0</div>
+                    <div class="countdown-label">שעות</div>
+                </div>
+                <div class="countdown-item">
+                    <div class="countdown-number" id="minutes">0</div>
+                    <div class="countdown-label">דקות</div>
+                </div>
+                <div class="countdown-item">
+                    <div class="countdown-number" id="seconds">0</div>
+                    <div class="countdown-label">שניות</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaf Divider -->
+        <div class="leaf-divider">🌿 🍃 🌿</div>
+
+        <!-- RSVP Section -->
+        <div class="card">
+            <div class="card-title">אישור הגעה</div>
+            <div class="card-divider"></div>
+
+            <!-- RSVP Form -->
+            <div id="rsvpForm">
+                <div class="step-indicators">
+                    <div class="step-dot active" id="step1Dot"></div>
+                    <div class="step-dot" id="step2Dot"></div>
+                    <div class="step-dot" id="step3Dot"></div>
+                </div>
+
+                <!-- Step 1: Name & Phone -->
+                <div id="step1" class="form-step">
+                    <div class="form-group">
+                        <label class="form-label">שם מלא *</label>
+                        <input type="text" id="guestName" placeholder="הכניסו שם מלא" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">מספר טלפון *</label>
+                        <input type="tel" id="guestPhone" placeholder="05X-XXXXXXX" required dir="ltr">
+                    </div>
+                    <button class="btn btn-primary" onclick="nextStep()">המשך ←</button>
+                </div>
+
+                <!-- Step 2: Attendance & Guests -->
+                <div id="step2" class="form-step hidden">
+                    <div style="text-align: center; font-weight: 600; color: #8B6914; margin-bottom: 20px;">
+                        האם אתם מגיעים?
+                    </div>
+                    <div class="attendance-buttons">
+                        <button class="attendance-btn" onclick="selectAttendance(true)">🎉 כן, אנחנו מגיעים!</button>
+                        <button class="attendance-btn" onclick="selectAttendance(false)">😢 לא נוכל להגיע</button>
+                    </div>
+
+                    <div id="guestCountSection" class="hidden" style="margin-top: 20px;">
+                        <label class="form-label">כמה אורחים?</label>
+                        <div class="guest-count-buttons">
+                            <button class="guest-count-btn" onclick="selectGuestCount(1)">1</button>
+                            <button class="guest-count-btn" onclick="selectGuestCount(2)">2</button>
+                            <button class="guest-count-btn" onclick="selectGuestCount(3)">3</button>
+                            <button class="guest-count-btn" onclick="selectGuestCount(4)">4</button>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="submitRsvp()">שלח תשובה ✓</button>
+                </div>
+
+                <!-- Step 3: Thank You -->
+                <div id="step3" class="form-step hidden">
+                    <div class="thank-you-message">
+                        <div class="thank-you-emoji">🎊</div>
+                        <div class="thank-you-text">תודה רבה על התשובה!</div>
+                        <div class="thank-you-subtext">נשמח לראות אתכם בחתונה</div>
+                        <button class="btn btn-primary" onclick="resetRsvp()">חזור לעמוד הבית 🏠</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaf Divider -->
+        <div class="leaf-divider">🌿 🍃 🌿</div>
+
+        <!-- Gift Section -->
+        <div class="card">
+            <button class="btn btn-secondary" onclick="openGiftModal()">🎁 רוצים להשאיר מתנה לזוג?</button>
+        </div>
+
+        <!-- Gift Modal -->
+        <div id="giftModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">מתנות לזוג 🎁</div>
+                    <button class="close-btn" onclick="closeGiftModal()">✕</button>
+                </div>
+
+                <div class="gift-tabs">
+                    <button class="gift-tab active" onclick="switchGiftTab('bit')">💸 ביט</button>
+                    <button class="gift-tab" onclick="switchGiftTab('paybox')">💙 פייבוקס</button>
+                </div>
+
+                <!-- Bit Tab -->
+                <div id="bitTab" class="gift-tab-content active">
+                    <div class="qr-placeholder">
+                        <div style="margin-bottom: 15px; font-size: 16px;">סרקו לתשלום בביט</div>
+                        <div style="font-size: 12px; opacity: 0.7;">QR Code</div>
+                    </div>
+                    <div class="gift-text">
+                        או העבירו ישירות למספר <strong>0503838631</strong>
+                    </div>
+                </div>
+
+                <!-- Paybox Tab -->
+                <div id="payboxTab" class="gift-tab-content">
+                    <a href="https://links.payboxapp.com/zTYBF8rws2b" target="_blank" class="btn btn-primary">
+                        💙 תשלום בפייבוקס
+                    </a>
+                    <div class="gift-text">
+                        לחצו להצטרפות לקבוצת המתנה — השימוש חינם!
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaf Divider -->
+        <div class="leaf-divider">🌿 🍃 🌿</div>
+
+        <!-- FAQ Section -->
+        <div class="faq-section">
+            <div class="card-title">שאלות נפוצות</div>
+            <div class="card-divider"></div>
+
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFaq(0)">
+                    <span class="faq-chevron">▼</span>
+                    <span>האם האולם נגיש?</span>
+                </button>
+                <div class="faq-answer">
+                    כן מאוד! האולם נגיש במלואו לאנשים עם מוגבלויות. ♿
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFaq(1)">
+                    <span class="faq-chevron">▼</span>
+                    <span>יש חניה במקום?</span>
+                </button>
+                <div class="faq-answer">
+                    בשפע רב! ישנה חניה גדולה ומוסדרת ממש ליד האולם. 🚗
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question" onclick="toggleFaq(2)">
+                    <span class="faq-chevron">▼</span>
+                    <span>קוד לבוש?</span>
+                </button>
+                <div class="faq-answer">
+                    לבוש צנוע יהלום את האירוע. 🤍
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaf Divider -->
+        <div class="leaf-divider">🌿 🍃 🌿</div>
+
+        <!-- Questions Section -->
+        <div class="card">
+            <div class="card-title">יש לכם שאלה?</div>
+            <div class="card-divider"></div>
+
+            <div class="form-group">
+                <label class="form-label">שמכם</label>
+                <input type="text" id="questionName" placeholder="הכניסו שם">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">השאלה שלכם</label>
+                <textarea id="questionText" placeholder="כתבו את שאלתכם כאן..."></textarea>
+            </div>
+
+            <button class="btn btn-primary" onclick="sendWhatsApp()">שלחו לנו 💬</button>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="leaf-decoration" style="display: inline-block; width: 60px; height: 60px; opacity: 0.4;">
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <path d="M50 10 Q70 30 60 50 Q70 70 50 90 Q30 70 40 50 Q30 30 50 10" fill="#7A8C5E"/>
+            </svg>
+        </div>
+        <div class="footer-text">
+            מתן &amp; פריאל | י״ג תמוז תשפ״ו | 28.6.2026
+        </div>
+    </footer>
+
+    <script>
+        // State
+        let currentStep = 1;
+        let selectedAttendance = null;
+        let selectedGuestCount = 2;
+        let editMode = false;
+        let editScale = 100;
+        let editOffsetX = 0;
+        let editOffsetY = 0;
+
+        // Load saved hero image on page load
+        window.addEventListener('load', function() {
+            loadHeroImage();
+            updateCountdown();
+        });
+
+        // Countdown Timer
+        function updateCountdown() {
+            const target = new Date('2026-06-28T18:00:00+03:00').getTime();
+            const now = Date.now();
+            const diff = target - now;
+
+            if (diff <= 0) {
+                document.getElementById('days').textContent = '0';
+                document.getElementById('hours').textContent = '0';
+                document.getElementById('minutes').textContent = '0';
+                document.getElementById('seconds').textContent = '0';
+                return;
+            }
+
+            const days = Math.floor(diff / 86400000);
+            const hours = Math.floor((diff % 86400000) / 3600000);
+            const minutes = Math.floor((diff % 3600000) / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+
+            document.getElementById('days').textContent = String(days).padStart(2, '0');
+            document.getElementById('hours').textContent = String(hours).padStart(2, '0');
+            document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
+            document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
+        }
+
+        setInterval(updateCountdown, 1000);
+
+        // Edit Mode Functions
+        function openEditMode() {
+            const password = prompt('הכניסו סיסמה');
+            if (password === 'Priel23') {
+                editMode = true;
+                document.getElementById('editPanel').classList.add('active');
+                document.getElementById('editScaleSlider').value = editScale;
+            } else if (password !== null) {
+                alert('סיסמה שגויה ❌');
+            }
+        }
+
+        function closeEditMode() {
+            editMode = false;
+            document.getElementById('editPanel').classList.remove('active');
+        }
+
+        function handleEditDragOver(e) {
+            e.preventDefault();
+            document.getElementById('editHeroUpload').classList.add('dragover');
+        }
+
+        function handleEditDragLeave(e) {
+            document.getElementById('editHeroUpload').classList.remove('dragover');
+        }
+
+        function handleEditDrop(e) {
+            e.preventDefault();
+            document.getElementById('editHeroUpload').classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleEditImageFile(files[0]);
+            }
+        }
+
+        function handleEditImageSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                handleEditImageFile(files[0]);
+            }
+        }
+
+        function handleEditImageFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('heroImage');
+                img.src = e.target.result;
+                img.style.display = 'block';
+                document.getElementById('heroPlaceholder').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateEditScale() {
+            editScale = document.getElementById('editScaleSlider').value;
+            const img = document.getElementById('heroImage');
+            if (img.src) {
+                img.style.transform = `scale(${editScale / 100})`;
+            }
+        }
+
+        function saveEditMode() {
+            const img = document.getElementById('heroImage');
+            if (img.src) {
+                localStorage.setItem('heroImage', img.src);
+                localStorage.setItem('heroScale', editScale);
+                alert('תמונה נשמרה בהצלחה! 💾');
+                closeEditMode();
+            } else {
+                alert('אנא בחרו תמונה');
+            }
+        }
+
+        function loadHeroImage() {
+            const saved = localStorage.getItem('heroImage');
+            if (saved) {
+                const img = document.getElementById('heroImage');
+                img.src = saved;
+                img.style.display = 'block';
+                document.getElementById('heroPlaceholder').style.display = 'none';
+                editScale = localStorage.getItem('heroScale') || 100;
+            }
+        }
+
+        // RSVP Form Functions
+        function nextStep() {
+            const name = document.getElementById('guestName').value.trim();
+            const phone = document.getElementById('guestPhone').value.trim();
+
+            if (!name || !phone) {
+                alert('אנא מלאו את כל השדות');
+                return;
+            }
+
+            currentStep = 2;
+            updateFormSteps();
+        }
+
+        function selectAttendance(attending) {
+            selectedAttendance = attending;
+            const yesBtn = document.querySelectorAll('.attendance-btn')[0];
+            const noBtn = document.querySelectorAll('.attendance-btn')[1];
+
+            yesBtn.classList.remove('selected-yes');
+            noBtn.classList.remove('selected-no');
+
+            if (attending) {
+                yesBtn.classList.add('selected-yes');
+                document.getElementById('guestCountSection').classList.remove('hidden');
+            } else {
+                noBtn.classList.add('selected-no');
+                document.getElementById('guestCountSection').classList.add('hidden');
+            }
+        }
+
+        function selectGuestCount(count) {
+            selectedGuestCount = count;
+            const buttons = document.querySelectorAll('.guest-count-btn');
+            buttons.forEach((btn, index) => {
+                btn.classList.remove('selected');
+                if (index + 1 === count) {
+                    btn.classList.add('selected');
+                }
+            });
+        }
+
+        function submitRsvp() {
+            if (selectedAttendance === null) {
+                alert('אנא בחרו האם אתם מגיעים');
+                return;
+            }
+
+            const name = document.getElementById('guestName').value;
+            const phone = document.getElementById('guestPhone').value;
+            const attending = selectedAttendance ? 'כן' : 'לא';
+            const guests = selectedAttendance ? selectedGuestCount : 0;
+
+            // Send to WhatsApp
+            const message = `אישור הגעה:\nשם: ${name}\nטלפון: ${phone}\nהגעה: ${attending}\nמספר אורחים: ${guests}`;
+            const encoded = encodeURIComponent(message);
+            window.open(`https://wa.me/972503838631?text=${encoded}`, '_blank');
+
+            // Show thank you
+            currentStep = 3;
+            updateFormSteps();
+        }
+
+        function resetRsvp() {
+            currentStep = 1;
+            selectedAttendance = null;
+            selectedGuestCount = 2;
+            document.getElementById('guestName').value = '';
+            document.getElementById('guestPhone').value = '';
+            updateFormSteps();
+        }
+
+        function updateFormSteps() {
+            document.getElementById('step1').classList.toggle('hidden', currentStep !== 1);
+            document.getElementById('step2').classList.toggle('hidden', currentStep !== 2);
+            document.getElementById('step3').classList.toggle('hidden', currentStep !== 3);
+
+            document.getElementById('step1Dot').classList.toggle('active', currentStep >= 1);
+            document.getElementById('step2Dot').classList.toggle('active', currentStep >= 2);
+            document.getElementById('step3Dot').classList.toggle('active', currentStep >= 3);
+        }
+
+        // Gift Modal
+        function openGiftModal() {
+            document.getElementById('giftModal').classList.add('show');
+        }
+
+        function closeGiftModal() {
+            document.getElementById('giftModal').classList.remove('show');
+        }
+
+        function switchGiftTab(tab) {
+            document.querySelectorAll('.gift-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.gift-tab-content').forEach(c => c.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Tab').classList.add('active');
+        }
+
+        // FAQ
+        function toggleFaq(index) {
+            const faqItems = document.querySelectorAll('.faq-item');
+            const answer = faqItems[index].querySelector('.faq-answer');
+            const chevron = faqItems[index].querySelector('.faq-chevron');
+
+            answer.classList.toggle('show');
+            chevron.classList.toggle('open');
+        }
+
+        // WhatsApp Question
+        function sendWhatsApp() {
+            const name = document.getElementById('questionName').value || 'אורח';
+            const question = document.getElementById('questionText').value;
+
+            if (!question.trim()) {
+                alert('אנא כתבו שאלה');
+                return;
+            }
+
+            const message = `שאלה מ${name}: ${question}`;
+            const encoded = encodeURIComponent(message);
+            window.open(`https://wa.me/972503838631?text=${encoded}`, '_blank');
+        }
+
+        // Close modal on outside click
+        window.onclick = function(event) {
+            const modal = document.getElementById('giftModal');
+            if (event.target === modal) {
+                closeGiftModal();
+            }
+        }
+    </script>
+</body>
+</html>
