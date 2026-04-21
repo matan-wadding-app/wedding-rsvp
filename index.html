@@ -540,7 +540,7 @@ let selectedCount = 1;
 let currentLang = 'he';
 
 const urlParams = new URLSearchParams(window.location.search);
-const token = urlParams.get('t');
+const token = urlParams.get('t') || urlParams.get('id');
 
 // ---- LANGUAGE ----
 function setLang(lang) {
@@ -585,7 +585,7 @@ async function init() {
     }
 
     try {
-        const { data, error } = await sb.from('guests').select('*').eq('id', token).single();
+        const { data, error } = await sb.from('guests').select('*').eq('טוקן', token).single();
         if (error || !data) throw error;
         currentGuest = data;
         document.getElementById('loading-overlay').classList.add('hidden');
