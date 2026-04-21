@@ -574,15 +574,34 @@ async function submitRsvp() {
     const guests_count = selectedAttendance ? selectedCount : 0;
 
     try {
-        if (currentGuest) {
-            // UPDATE existing guest by id
-            const { error } = await sb
+        if (currentGuest && guestId) {
+            // Build update object - only include fields that exist on currentGuest
+            const updateData = {};
+            if ('rsvp_status' in currentGuest) updateData.rsvp_status = rsvp_status;
+            if ('guests_count' in currentGuest) updateData.guests_count = guests_count;
+
+            console.log('Updating guest id:', guestId);
+            console.log('Update data:', updateData);
+
+            // UPDATE existing guest by id column
+            const { data, error } = await sb
                 .from('guests')
-                .update({ rsvp_status: rsvp_status, guests_count: guests_count })
-                .eq('id', currentGuest.id);
-            if (error) throw error;
+                .update(updateData)
+                .eq('id', guestId)
+                .select();
+
+            if (error) {
+                console.error('=== SUPABASE UPDATE ERROR ===');
+                console.error('Message:', error.message);
+                console.error('Details:', error.details);
+                console.error('Hint:', error.hint);
+                console.error('Code:', error.code);
+                console.error('Full error:', JSON.stringify(error, null, 2));
+                throw error;
+            }
+            console.log('Update success:', data);
         } else {
-            // INSERT new guest (no id in URL)
+            // INSERT new guest (no id in URL / fallback)
             const name = document.getElementById('manual-name').value.trim();
             const phone = document.getElementById('manual-phone').value.trim();
             if (!name || !phone) {
@@ -595,14 +614,27 @@ async function submitRsvp() {
                 guests_count: guests_count
             };
             newGuest['טלפון'] = phone;
-            const { error } = await sb.from('guests').insert([newGuest]);
-            if (error) throw error;
+
+            console.log('Inserting new guest:', newGuest);
+            const { data, error } = await sb.from('guests').insert([newGuest]).select();
+
+            if (error) {
+                console.error('=== SUPABASE INSERT ERROR ===');
+                console.error('Message:', error.message);
+                console.error('Details:', error.details);
+                console.error('Hint:', error.hint);
+                console.error('Code:', error.code);
+                console.error('Full error:', JSON.stringify(error, null, 2));
+                throw error;
+            }
+            console.log('Insert success:', data);
         }
         document.getElementById('rsvp-form').classList.add('hidden');
         document.getElementById('thank-you').classList.remove('hidden');
     } catch (err) {
-        console.error('Submit error:', err);
-        alert(currentLang === 'he' ? 'שגיאה בשמירה, נסו שוב' : 'Error saving, please try again');
+        console.error('Submit caught error:', err);
+        const errMsg = (err && err.message) ? err.message : 'Unknown';
+        alert((currentLang === 'he' ? 'שגיאה בשמירה: ' : 'Save error: ') + errMsg);
     }
 }
 
