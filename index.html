@@ -474,7 +474,7 @@ let currentLang = 'he';
 
 // ==== URL PARAM - ID ONLY ====
 const urlParams = new URLSearchParams(window.location.search);
-const guestId = urlParams.get('id');
+const guestToken = urlParams.get('t') || urlParams.get('id');
 
 // ==== LANGUAGE ====
 function setLang(lang) {
@@ -511,7 +511,7 @@ async function init() {
     updateCountdown();
     setInterval(updateCountdown, 1000);
 
-    if (!guestId) {
+    if (!guestToken) {
         // No ID param - show manual form (fallback)
         document.getElementById('loading-overlay').classList.add('hidden');
         document.getElementById('rsvp-content').classList.remove('hidden');
@@ -525,7 +525,7 @@ async function init() {
         const { data, error } = await sb
             .from('guests')
             .select('*')
-            .eq('id', guestId)
+            .eq('token', guestToken)
             .single();
 
         if (error || !data) throw error || new Error('Guest not found');
@@ -574,7 +574,7 @@ async function submitRsvp() {
     const guests_count = selectedAttendance ? selectedCount : 0;
 
     try {
-        if (currentGuest && guestId) {
+        if (currentGuest && guestToken) {
             // Build update object - only include fields that exist on currentGuest
             const updateData = {};
             if ('rsvp_status' in currentGuest) updateData.rsvp_status = rsvp_status;
@@ -587,7 +587,7 @@ async function submitRsvp() {
             const { data, error } = await sb
                 .from('guests')
                 .update(updateData)
-                .eq('id', guestId)
+                .eq('id', currentGuest.id)
                 .select();
 
             if (error) {
@@ -613,7 +613,7 @@ async function submitRsvp() {
                 rsvp_status: rsvp_status,
                 guests_count: guests_count
             };
-            newGuest['טלפון'] = phone;
+            newGuest['phone'] = phone;
 
             console.log('Inserting new guest:', newGuest);
             const { data, error } = await sb.from('guests').insert([newGuest]).select();
