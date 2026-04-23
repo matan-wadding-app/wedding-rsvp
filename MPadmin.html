@@ -384,7 +384,71 @@ tr:hover td { background: #faf7f2; }
 .status-declined { background: #f5e4e4; color: var(--danger); }
 .status-pending { background: #faefd8; color: var(--pending); }
 
-.row-actions { display: flex; gap: 0.25rem; justify-content: flex-end; }
+.row-actions { display: flex; gap: 0.25rem; justify-content: flex-end; flex-wrap: wrap; }
+
+/* WhatsApp and SMS buttons */
+.btn-wa {
+  background: #25D366;
+  color: white;
+  border: none;
+  font-weight: 600;
+}
+.btn-wa:hover { background: #1eb857; }
+
+.btn-sms {
+  background: #4A90E2;
+  color: white;
+  border: none;
+  font-weight: 600;
+}
+.btn-sms:hover { background: #3a7bc8; }
+
+/* Row marked as contacted */
+.row-contacted {
+  background-color: #f0f9f1 !important;
+}
+.row-contacted td {
+  opacity: 0.75;
+}
+.contact-check {
+  color: #2e7d32;
+  font-weight: 700;
+  margin-left: 0.5rem;
+  font-size: 1.1rem;
+}
+
+/* Progress stats bar */
+.contact-progress {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.contact-progress-bar {
+  flex: 1;
+  min-width: 200px;
+  height: 8px;
+  background: #eee;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+.contact-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #25D366, #4A90E2);
+  transition: width 0.3s ease;
+}
+.contact-progress-text {
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
 
 /* ═════ Filters ═════ */
 .filters {
@@ -560,6 +624,18 @@ tr:hover td { background: #faf7f2; }
 
     <!-- ═════ Guests Tab ═════ -->
     <div id="tab-guests" class="tab-content">
+      <!-- Bulk Contact Center -->
+      <div class="card" style="margin-bottom:1rem;">
+        <h2 class="serif">📨 מרכז שליחת הזמנות</h2>
+        <p class="muted" style="margin-bottom:1rem;">לחץ על WA או SMS ליד כל אורח - ההודעה תיפתח מוכנה עם הקישור האישי.</p>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1rem;">
+          <button class="btn btn-wa" onclick="sendNextGuest('wa')">💬 שלח לאורח הבא בוואטסאפ</button>
+          <button class="btn btn-sms" onclick="sendNextGuest('sms')">📱 שלח לאורח הבא ב-SMS</button>
+        </div>
+        <div class="contact-progress" id="contactProgress"></div>
+      </div>
+
+
       <div class="card">
         <h2 class="serif">הוספת אורח</h2>
         <form id="addGuestForm">
@@ -883,27 +959,38 @@ function renderGuests() {
   }
 
   const statusLabels = { coming: '✔️ מאשר', not_coming: '❌ לא מגיע', pending: '⏳ לא ענה' };
-  tbody.innerHTML = filtered.map(g => `
-    <tr>
-      <td><strong>${escapeHtml(g.full_name)}</strong></td>
+  tbody.innerHTML = filtered.map(g => {
+    const contacted = isContacted(g.id);
+    return `
+    <tr class="${contacted ? 'row-contacted' : ''}">
+      <td>
+        ${contacted ? '<span class="contact-check">✓</span>' : ''}
+        <strong>${escapeHtml(g.full_name)}</strong>
+      </td>
       <td>${escapeHtml(g.phone || '–')}</td>
       <td>${escapeHtml(g.category)}</td>
       <td><span class="status-pill status-${g.rsvp_status}">${statusLabels[g.rsvp_status]}</span></td>
       <td>${g.guests_count || 1}</td>
       <td>
         <div class="row-actions">
-          <button class="btn btn-secondary btn-icon" onclick="showLink('${g.id}')">🔗 קישור</button>
+          <button class="btn btn-wa btn-icon" onclick="sendWhatsApp('${g.id}')" title="שלח בוואטסאפ">💬 WA</button>
+          <button class="btn btn-sms btn-icon" onclick="sendSMS('${g.id}')" title="שלח SMS">📱 SMS</button>
+          <button class="btn btn-secondary btn-icon" onclick="showLink('${g.id}')">🔗</button>
           <button class="btn btn-secondary btn-icon" onclick="editGuest('${g.id}')">✎</button>
           <button class="btn btn-danger btn-icon" onclick="deleteGuest('${g.id}')">🗑</button>
         </div>
       </td>
     </tr>
-  `).join('');
+  `;}).join('');
 }
 
 ['f-search', 'f-category', 'f-status'].forEach(id =>
-  document.getElementById(id).addEventListener('input', renderGuests)
+  document.getElementById(id).addEventListener('input', () => { renderGuests(); updateContactProgress(); })
 );
+
+// Update progress when guests load
+const originalRender = renderGuests;
+window.renderGuests = function() { originalRender(); updateContactProgress(); };
 
 // ═══════════════════════════════════════════════════════════════════
 // Add / edit / delete guest
@@ -1146,6 +1233,129 @@ function toast(msg, type = '') {
   t.className = 'toast show ' + type;
   setTimeout(() => t.classList.remove('show'), 3000);
 }
+
+
+// ═══════════════════════════════════════════════════════════════════
+// WhatsApp + SMS Bulk Contact System
+// ═══════════════════════════════════════════════════════════════════
+
+// Generate message template for a guest
+function buildInviteMessage(guest) {
+  const token = guest.token || guest.id;
+  const link = `https://matan23104.github.io/wedding-rsvp/?t=${token}`;
+  const firstName = (guest.full_name || '').split(' ')[0];
+  return `היי ${firstName} 👋\n\n` +
+    `אנחנו - מתן ופריאל - מתחתנים ביום ראשון, י״ג בתמוז התשפ״ו (28.06.2026), ושמחים להזמין אותך! 🥂\n\n` +
+    `קישור לאישור הגעה:\n${link}\n\n` +
+    `נשמח לראות אותך איתנו! 💍❤️`;
+}
+
+// Format phone for wa.me (international format)
+function formatPhoneIntl(phone) {
+  const digits = (phone || '').replace(/\D/g, '');
+  if (!digits) return null;
+  if (digits.startsWith('972')) return digits;
+  if (digits.startsWith('0')) return '972' + digits.slice(1);
+  return '972' + digits;
+}
+
+// Format phone for SMS (local format)
+function formatPhoneLocal(phone) {
+  return (phone || '').replace(/\D/g, '');
+}
+
+// Check if guest was already contacted (localStorage)
+function isContacted(guestId) {
+  try {
+    const list = JSON.parse(localStorage.getItem('contactedGuests') || '[]');
+    return list.includes(guestId);
+  } catch { return false; }
+}
+
+// Mark guest as contacted
+function markContacted(guestId) {
+  try {
+    const list = JSON.parse(localStorage.getItem('contactedGuests') || '[]');
+    if (!list.includes(guestId)) {
+      list.push(guestId);
+      localStorage.setItem('contactedGuests', JSON.stringify(list));
+    }
+  } catch (e) { console.error(e); }
+}
+
+// Reset all contacted marks
+function resetContacted() {
+  if (!confirm('לאפס את סימון "נשלח" לכל האורחים?')) return;
+  localStorage.removeItem('contactedGuests');
+  renderGuests();
+  updateContactProgress();
+  toast('הסימונים אופסו', 'success');
+}
+
+// Update progress bar
+function updateContactProgress() {
+  const el = document.getElementById('contactProgress');
+  if (!el) return;
+  const total = allGuests.length;
+  if (total === 0) { el.innerHTML = ''; return; }
+  let contacted = 0;
+  try {
+    const list = JSON.parse(localStorage.getItem('contactedGuests') || '[]');
+    contacted = allGuests.filter(g => list.includes(g.id)).length;
+  } catch {}
+  const pct = total ? Math.round((contacted / total) * 100) : 0;
+  el.innerHTML = `
+    <div class="contact-progress-text">נשלחו ${contacted}/${total} (${pct}%)</div>
+    <div class="contact-progress-bar"><div class="contact-progress-fill" style="width:${pct}%"></div></div>
+    <button class="btn btn-secondary btn-icon" onclick="resetContacted()">🔄 אפס</button>
+  `;
+}
+
+// Send via WhatsApp
+function sendWhatsApp(guestId) {
+  const g = allGuests.find(x => x.id === guestId);
+  if (!g) return;
+  const phone = formatPhoneIntl(g.phone);
+  if (!phone) { toast('אין מספר טלפון', 'error'); return; }
+  const msg = buildInviteMessage(g);
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+  markContacted(guestId);
+  setTimeout(() => { renderGuests(); updateContactProgress(); }, 500);
+}
+
+// Send via SMS
+function sendSMS(guestId) {
+  const g = allGuests.find(x => x.id === guestId);
+  if (!g) return;
+  const phone = formatPhoneLocal(g.phone);
+  if (!phone) { toast('אין מספר טלפון', 'error'); return; }
+  const msg = buildInviteMessage(g);
+  // iOS uses &body= with & separator, Android uses ?body=
+  // Using ?body= works on both modern devices
+  const url = `sms:${phone}?body=${encodeURIComponent(msg)}`;
+  window.location.href = url;
+  markContacted(guestId);
+  setTimeout(() => { renderGuests(); updateContactProgress(); }, 500);
+}
+
+// Bulk send - opens next uncontacted guest
+function sendNextGuest(channel) {
+  const filter = document.getElementById('f-category').value;
+  const pending = allGuests.filter(g => {
+    if (isContacted(g.id)) return false;
+    if (filter && g.category !== filter) return false;
+    return g.phone;
+  });
+  if (pending.length === 0) {
+    toast('כל האורחים כבר קיבלו הודעה! 🎉', 'success');
+    return;
+  }
+  const next = pending[0];
+  if (channel === 'wa') sendWhatsApp(next.id);
+  else sendSMS(next.id);
+}
+
 </script>
 </body>
 </html>
