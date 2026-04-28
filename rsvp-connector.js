@@ -9,12 +9,20 @@
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get('t');
   let currentGuest = null;
+  const isRpcMissing = (error) => !!(error && error.code === 'PGRST202');
 
   async function loadGuestByToken() {
     if (!token) return null;
-    const { data, error } = await supa
+    let { data, error } = await supa
       .rpc('get_guest_by_token', { p_token: token })
       .maybeSingle();
+    if (isRpcMissing(error)) {
+      ({ data, error } = await supa
+        .from('guests')
+        .select('*')
+        .eq('token', token)
+        .maybeSingle());
+    }
     if (error) { console.error('Error loading guest:', error); return null; }
     return data;
   }
@@ -43,12 +51,23 @@
       alert('לא זוהה אורח. נא לוודא שפתחת את הקישור האישי שקיבלת');
       return false;
     }
-    const { error } = await supa.rpc('submit_rsvp_by_token', {
+    let { error } = await supa.rpc('submit_rsvp_by_token', {
       p_token: token,
       p_rsvp_status: status,
       p_guests_count: guestsCount || 1,
       p_notes: notes || null
     });
+    if (isRpcMissing(error)) {
+      ({ error } = await supa
+        .from('guests')
+        .update({
+          rsvp_status: status,
+          guests_count: guestsCount || 1,
+          notes: notes || null,
+          responded_at: new Date().toISOString()
+        })
+        .eq('id', currentGuest.id));
+    }
 
     if (error) {
       alert('שגיאה בשמירת התשובה: ' + error.message);
@@ -62,10 +81,16 @@
       alert('נא למלא שם ושאלה');
       return false;
     }
-    const { error } = await supa.rpc('submit_question_public', {
+    let { error } = await supa.rpc('submit_question_public', {
       p_guest_name: guestName,
       p_question_text: questionText
     });
+    if (isRpcMissing(error)) {
+      ({ error } = await supa.from('questions').insert({
+        guest_name: guestName,
+        question_text: questionText
+      }));
+    }
     if (error) {
       alert('שגיאה בשליחה: ' + error.message);
       return false;

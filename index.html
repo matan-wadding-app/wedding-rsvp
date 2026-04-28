@@ -494,6 +494,10 @@ let currentLang = 'he';
 const urlParams = new URLSearchParams(window.location.search);
 const guestToken = urlParams.get('t') || urlParams.get('id');
 
+function isRpcMissing(error) {
+    return !!(error && error.code === 'PGRST202');
+}
+
 // ==== LANGUAGE ====
 function setLang(lang) {
     currentLang = lang;
@@ -540,9 +544,17 @@ async function init() {
 
     try {
         // Fetch guest through RPC (works with strict RLS)
-        const { data, error } = await sb
+        let { data, error } = await sb
             .rpc('get_guest_by_token', { p_token: guestToken })
             .single();
+
+        if (isRpcMissing(error)) {
+            ({ data, error } = await sb
+                .from('guests')
+                .select('*')
+                .eq('token', guestToken)
+                .single());
+        }
 
         if (error || !data) throw error || new Error('Guest not found');
 
@@ -591,11 +603,22 @@ async function submitRsvp() {
 
     try {
         if (currentGuest && guestToken) {
-            const { data, error } = await sb.rpc('submit_rsvp_by_token', {
+            let { data, error } = await sb.rpc('submit_rsvp_by_token', {
                 p_token: guestToken,
                 p_rsvp_status: rsvp_status,
                 p_guests_count: guests_count
             });
+
+            if (isRpcMissing(error)) {
+                const updateData = {};
+                if ('rsvp_status' in currentGuest) updateData.rsvp_status = rsvp_status;
+                if ('guests_count' in currentGuest) updateData.guests_count = guests_count;
+                ({ data, error } = await sb
+                    .from('guests')
+                    .update(updateData)
+                    .eq('id', currentGuest.id)
+                    .select());
+            }
 
             if (error) {
                 console.error('=== SUPABASE UPDATE ERROR ===');
@@ -615,12 +638,24 @@ async function submitRsvp() {
                 alert(currentLang === 'he' ? 'אנא מלאו שם וטלפון' : 'Please fill name and phone');
                 return;
             }
-            const { data, error } = await sb.rpc('submit_rsvp_manual', {
+            let { data, error } = await sb.rpc('submit_rsvp_manual', {
                 p_full_name: name,
                 p_phone: phone,
                 p_rsvp_status: rsvp_status,
                 p_guests_count: guests_count
             });
+
+            if (isRpcMissing(error)) {
+                ({ data, error } = await sb
+                    .from('guests')
+                    .insert([{
+                        full_name: name,
+                        phone,
+                        rsvp_status,
+                        guests_count
+                    }])
+                    .select());
+            }
 
             if (error) {
                 console.error('=== SUPABASE INSERT ERROR ===');
@@ -647,10 +682,15 @@ async function sendQuestion() {
     if (!msg) return;
     const guestName = currentGuest ? currentGuest.full_name : 'אורח';
     try {
-        const { error } = await sb.rpc('submit_question_public', {
+        let { error } = await sb.rpc('submit_question_public', {
             p_guest_name: guestName,
             p_question_text: msg
         });
+        if (isRpcMissing(error)) {
+            ({ error } = await sb
+                .from('questions')
+                .insert([{ guest_name: guestName, question_text: msg }]));
+        }
         if (error) throw error;
         document.getElementById('question-text').value = '';
         alert(currentLang === 'he' ? 'השאלה נשלחה! 💌' : 'Message sent! 💌');
