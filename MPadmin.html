@@ -682,6 +682,10 @@ tr:hover td { background: #faf7f2; }
               <input type="tel" id="g-phone" placeholder="05X-XXXXXXX">
             </div>
             <div>
+              <label for="g-guests-count">כמות אורחים (ברירת מחדל 1)</label>
+              <input type="number" id="g-guests-count" min="1" max="99" value="1">
+            </div>
+            <div>
               <label for="g-category">קטגוריה *</label>
               <select id="g-category" required>
                 <option value="">-- בחר --</option>
@@ -736,6 +740,7 @@ tr:hover td { background: #faf7f2; }
                 <th>שם</th>
                 <th>טלפון</th>
                 <th>קטגוריה</th>
+                <th>כמות</th>
                 <th>סטטוס</th>
                 <th>פעולות</th>
               </tr>
@@ -766,8 +771,8 @@ tr:hover td { background: #faf7f2; }
       <div class="card">
         <h2 class="serif">ייבוא מרשימת אורחים (Excel / CSV)</h2>
         <p class="muted" style="margin-bottom:1rem;">
-          ניתן להעלות קובץ Excel או CSV בפורמט פשוט: <code>full_name,phone</code><br>
-          שדות נוספים נתמכים גם כן, ואם הקטגוריה חסרה היא תשויך אוטומטית: <code>רשימת תפוצה</code>
+          ניתן להעלות קובץ Excel או CSV בפורמט פשוט: <code>full_name,phone</code> (ללא עמודת כמות בקובץ).<br>
+          לכל שורה ייקבע אוטומטית <strong>כמות = 1</strong> עד שינוי באתר או באדמין. עמודה שלישית אופציונלית: קטגוריה — אם חסרה: <code>רשימת תפוצה</code>
         </p>
         <input type="file" id="csvFile" accept=".csv,.xlsx,.xls">
         <button class="btn btn-primary" style="margin-top:0.75rem;" onclick="importGuestFile()">📥 ייבא</button>
@@ -997,6 +1002,9 @@ async function loadQuestions() {
 function renderOverview() {
   const total = allGuests.length;
   const confirmed = allGuests.filter(g => g.rsvp_status === 'coming').length;
+  const headcountComing = allGuests
+    .filter(g => g.rsvp_status === 'coming')
+    .reduce((s, g) => s + (Number(g.guests_count) > 0 ? Number(g.guests_count) : 1), 0);
   const declined = allGuests.filter(g => g.rsvp_status === 'not_coming').length;
   const pending = allGuests.filter(g => g.rsvp_status === 'pending').length;
   const responded = allGuests.length - pending;
@@ -1011,7 +1019,7 @@ function renderOverview() {
     <div class="stat confirmed">
       <div class="label">מאושרים</div>
       <div class="value">${confirmed}</div>
-      <div class="sub">אורחים שאישרו הגעה</div>
+      <div class="sub">${headcountComing} נפשות (סה״כ כמות מאשרים)</div>
     </div>
     <div class="stat declined">
       <div class="label">לא מגיעים</div>
@@ -1081,7 +1089,7 @@ function renderGuests() {
 
   const tbody = document.getElementById('guestsTable');
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:2rem;" class="muted">אין תוצאות</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:2rem;" class="muted">אין תוצאות</td></tr>`;
     return;
   }
 
@@ -1096,6 +1104,7 @@ function renderGuests() {
       </td>
       <td>${escapeHtml(g.phone || '–')}</td>
       <td>${escapeHtml(g.category)}</td>
+      <td>${g.rsvp_status === 'coming' ? (Number(g.guests_count) > 0 ? Number(g.guests_count) : 1) : '–'}</td>
       <td><span class="status-pill status-${g.rsvp_status}">${statusLabels[g.rsvp_status]}</span></td>
       <td>
         <div class="row-actions">
@@ -1123,10 +1132,13 @@ window.renderGuests = function() { originalRender(); updateContactProgress(); };
 // ═══════════════════════════════════════════════════════════════════
 document.getElementById('addGuestForm').addEventListener('submit', async (e) => {
   e.preventDefault();
+  const gc = parseInt(document.getElementById('g-guests-count').value, 10);
+  const guests_count = Number.isFinite(gc) && gc > 0 ? Math.min(99, gc) : 1;
   const payload = {
     full_name: document.getElementById('g-name').value.trim(),
     phone: document.getElementById('g-phone').value.trim() || null,
-    category: document.getElementById('g-category').value
+    category: document.getElementById('g-category').value,
+    guests_count
   };
   const { error } = await supa.from('guests').insert(payload);
   if (error) { toast('שגיאה: ' + error.message, 'error'); return; }
@@ -1152,6 +1164,13 @@ async function editGuest(id) {
   );
   if (!newStatus || !['pending','coming','not_coming'].includes(newStatus)) return;
   const payload = { rsvp_status: newStatus };
+  if (newStatus === 'coming') {
+    const cur = Number(g.guests_count) > 0 ? Number(g.guests_count) : 1;
+    const cnt = parseInt(prompt(`כמות אורחים (מגיעים) עבור ${g.full_name}:`, String(cur)), 10);
+    payload.guests_count = Number.isFinite(cnt) && cnt > 0 ? Math.min(99, cnt) : 1;
+  } else if (newStatus === 'not_coming') {
+    payload.guests_count = 0;
+  }
   if (newStatus !== 'pending') payload.responded_at = new Date().toISOString();
   const { error } = await supa.from('guests').update(payload).eq('id', id);
   if (error) { toast('שגיאה: ' + error.message, 'error'); return; }
@@ -1295,7 +1314,8 @@ async function parseGuestRowsFromFile(file) {
   return bodyRows.map((cells) => ({
     full_name: String(cells?.[0] || '').trim(),
     phone: String(cells?.[1] || '').trim() || null,
-    category: String(cells?.[2] || '').trim() || DEFAULT_IMPORT_CATEGORY
+    category: String(cells?.[2] || '').trim() || DEFAULT_IMPORT_CATEGORY,
+    guests_count: 1
   })).filter(r => r.full_name);
 }
 
@@ -1326,9 +1346,10 @@ function exportCSV(type) {
     const statusLabels = { coming: '✔️ מאשר', not_coming: '❌ לא מגיע', pending: '⏳ לא ענה' };
     let data = allGuests;
     if (type === 'coming') data = data.filter(g => g.rsvp_status === 'coming');
-    header = ['שם', 'טלפון', 'קטגוריה', 'סטטוס', 'הערות'];
+    header = ['שם', 'טלפון', 'קטגוריה', 'כמות', 'סטטוס', 'הערות'];
     rows = data.map(g => [
       g.full_name, g.phone || '', g.category,
+      g.rsvp_status === 'coming' ? (Number(g.guests_count) > 0 ? Number(g.guests_count) : 1) : 0,
       statusLabels[g.rsvp_status], g.notes || ''
     ]);
     filename = type === 'coming' ? 'wedding-confirmed.csv' : 'wedding-all.csv';
