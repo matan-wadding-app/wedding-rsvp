@@ -10,6 +10,55 @@ Use this file as your operational checklist.
 
 ---
 
+## 0) One-command launcher (recommended)
+
+Use `launch.ps1` to open guest + admin together.
+
+From project folder in PowerShell:
+
+```powershell
+.\launch.ps1
+```
+
+### Common usage
+
+Production mode (default):
+
+```powershell
+.\launch.ps1
+```
+
+This opens the final public URLs:
+
+- `https://matan-wadding-app.github.io/wedding-rsvp/`
+- `https://matan-wadding-app.github.io/wedding-rsvp/MPadmin.html`
+
+Copy send-ready guest/admin links to clipboard:
+
+```powershell
+.\launch.ps1 -CopyLinks
+```
+
+Local mode (starts local static server if needed):
+
+```powershell
+.\launch.ps1 -Mode local
+```
+
+Open publish panels too (repo + GitHub Pages settings):
+
+```powershell
+.\launch.ps1 -OpenPublishPanels
+```
+
+Open Supabase dashboard and SQL file too:
+
+```powershell
+.\launch.ps1 -OpenSupabasePanels -OpenSqlFile
+```
+
+---
+
 ## 1) Publish (Go Live)
 
 ### 1.1 Prerequisites
@@ -44,11 +93,11 @@ In GitHub:
 
 Expected site URL:
 
-- `https://matan23104.github.io/wedding-rsvp/`
+- `https://matan-wadding-app.github.io/wedding-rsvp/`
 
 Admin URL:
 
-- `https://matan23104.github.io/wedding-rsvp/MPadmin.html`
+- `https://matan-wadding-app.github.io/wedding-rsvp/MPadmin.html`
 
 ### 1.4 Configure Supabase auth admin user
 
@@ -81,7 +130,7 @@ Run this checklist before sharing links broadly.
 
 Open a known guest token URL:
 
-- `https://matan23104.github.io/wedding-rsvp/?t=YOUR_TOKEN`
+- `https://matan-wadding-app.github.io/wedding-rsvp/?t=YOUR_TOKEN`
 
 Validate:
 
@@ -95,7 +144,7 @@ Validate:
 
 Open:
 
-- `https://matan23104.github.io/wedding-rsvp/MPadmin.html`
+- `https://matan-wadding-app.github.io/wedding-rsvp/MPadmin.html`
 
 Validate:
 
@@ -140,7 +189,7 @@ limit 50;
 
 Build links:
 
-- `https://matan23104.github.io/wedding-rsvp/?t=<token>`
+- `https://matan-wadding-app.github.io/wedding-rsvp/?t=<token>`
 
 Manually open 5-10 random links and verify behavior.
 
@@ -215,7 +264,7 @@ If a bad deploy happens:
 
 ## 6) Useful Links
 
-- Repository: `https://github.com/matan23104/wedding-rsvp`
-- Site: `https://matan23104.github.io/wedding-rsvp/`
-- Admin: `https://matan23104.github.io/wedding-rsvp/MPadmin.html`
+- Repository: `https://github.com/matan-wadding-app/wedding-rsvp`
+- Site: `https://matan-wadding-app.github.io/wedding-rsvp/`
+- Admin: `https://matan-wadding-app.github.io/wedding-rsvp/MPadmin.html`
 

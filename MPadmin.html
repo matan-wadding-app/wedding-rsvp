@@ -603,7 +603,16 @@ tr:hover td { background: #faf7f2; }
       <label for="adminPassword" style="margin-top:0.75rem;">סיסמה</label>
       <input type="password" id="adminPassword" required>
       <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1rem; justify-content:center;">כניסה ←</button>
+      <button type="button" id="forgotPasswordBtn" class="link-btn" style="margin-top:0.75rem;">שכחתי סיסמה</button>
       <p class="muted" style="margin-top:0.75rem;">התחברות מאובטחת דרך Supabase Auth</p>
+    </form>
+    <form id="resetForm" style="display:none;">
+      <label for="newPassword">סיסמה חדשה</label>
+      <input type="password" id="newPassword" minlength="6" required>
+      <label for="confirmPassword" style="margin-top:0.75rem;">אימות סיסמה</label>
+      <input type="password" id="confirmPassword" minlength="6" required>
+      <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1rem; justify-content:center;">עדכן סיסמה ←</button>
+      <p class="muted" style="margin-top:0.75rem;">פתחת קישור איפוס. אחרי עדכון הסיסמה אפשר להתחבר.</p>
     </form>
   </div>
 </div>
@@ -818,6 +827,7 @@ let allGuests = [];
 let allQuestions = [];
 let currentGuestForLink = null;
 let isAppVisible = false;
+let isRecoveryMode = false;
 
 // ═══════════════════════════════════════════════════════════════════
 // Auth (Supabase email/password)
@@ -834,6 +844,51 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   }
 });
 
+document.getElementById('forgotPasswordBtn').addEventListener('click', async () => {
+  const email = document.getElementById('adminEmail').value.trim();
+  if (!email) {
+    toast('הכנס אימייל כדי לשלוח קישור איפוס', 'error');
+    return;
+  }
+
+  const { error } = await supa.auth.resetPasswordForEmail(email, {
+    redirectTo: `${WEDDING_CONFIG.SITE_URL}MPadmin.html`
+  });
+
+  if (error) {
+    toast('שליחת קישור איפוס נכשלה: ' + error.message, 'error');
+    return;
+  }
+
+  toast('נשלח מייל לאיפוס סיסמה', 'success');
+});
+
+document.getElementById('resetForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const newPassword = document.getElementById('newPassword').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
+
+  if (newPassword.length < 6) {
+    toast('הסיסמה חייבת להכיל לפחות 6 תווים', 'error');
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    toast('הסיסמאות אינן תואמות', 'error');
+    return;
+  }
+
+  const { error } = await supa.auth.updateUser({ password: newPassword });
+  if (error) {
+    toast('עדכון סיסמה נכשל: ' + error.message, 'error');
+    return;
+  }
+
+  toast('הסיסמה עודכנה בהצלחה. אפשר להתחבר עכשיו.', 'success');
+  window.location.hash = '';
+  isRecoveryMode = false;
+  showLogin();
+});
+
 function showApp() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').classList.add('active');
@@ -847,6 +902,8 @@ function showLogin() {
   isAppVisible = false;
   document.getElementById('app').classList.remove('active');
   document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginForm').style.display = isRecoveryMode ? 'none' : 'block';
+  document.getElementById('resetForm').style.display = isRecoveryMode ? 'block' : 'none';
 }
 
 async function logout() {
@@ -856,12 +913,42 @@ async function logout() {
 }
 
 async function bootstrapAuth() {
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const flowType = hashParams.get('type');
+  const accessToken = hashParams.get('access_token');
+  const refreshToken = hashParams.get('refresh_token');
+
+  if (flowType === 'recovery' && accessToken && refreshToken) {
+    const { error } = await supa.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken
+    });
+
+    if (error) {
+      toast('קישור איפוס לא תקין או שפג תוקפו', 'error');
+      isRecoveryMode = false;
+      showLogin();
+      return;
+    }
+
+    isRecoveryMode = true;
+    showLogin();
+    toast('הזן סיסמה חדשה כדי לסיים איפוס', 'success');
+    return;
+  }
+
   const { data: { session } } = await supa.auth.getSession();
   if (session) showApp();
   else showLogin();
 }
 
-supa.auth.onAuthStateChange((_event, session) => {
+supa.auth.onAuthStateChange((event, session) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    isRecoveryMode = true;
+    showLogin();
+    return;
+  }
+  if (isRecoveryMode && event === 'SIGNED_IN') return;
   if (session) showApp();
   else showLogin();
 });
@@ -1285,7 +1372,7 @@ function toast(msg, type = '') {
 // Generate message template for a guest
 function buildInviteMessage(guest) {
   const token = guest.token || guest.id;
-  const link = `https://matan23104.github.io/wedding-rsvp/?t=${token}`;
+  const link = `${WEDDING_CONFIG.SITE_URL}?t=${token}`;
   const firstName = (guest.full_name || '').split(' ')[0];
   return `היי ${firstName} 👋\n\n` +
     `אנחנו - מתן ופריאל - מתחתנים ביום ראשון, י״ג בתמוז התשפ״ו (28.06.2026), ושמחים להזמין אותך! 🥂\n\n` +
