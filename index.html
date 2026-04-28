@@ -685,7 +685,8 @@ async function submitRsvp() {
 async function sendQuestion() {
     const msg = document.getElementById('question-text').value.trim();
     if (!msg) return;
-    const guestName = currentGuest ? currentGuest.full_name : 'אורח';
+    const manualName = document.getElementById('manual-name')?.value?.trim();
+    const guestName = currentGuest?.full_name || manualName || 'אורח';
     try {
         let { error } = await sb.rpc('submit_question_public', {
             p_guest_name: guestName,
