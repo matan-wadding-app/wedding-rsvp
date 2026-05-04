@@ -651,6 +651,12 @@ tr:hover td { background: #faf7f2; }
         <h2 class="serif">פילוח לפי קטגוריה</h2>
         <div class="category-grid" id="categoryGrid"></div>
       </div>
+
+      <div class="card">
+        <h2 class="serif">פילוח לפי צד הזמנה (קירבה)</h2>
+        <p class="muted" style="margin-bottom:1rem;">מבוסס על עמודת <strong>קירבה</strong> בייבוא: צד חתן או צד כלה — משפיע על קישור הביט באתר לאורח.</p>
+        <div class="category-grid" id="sideGrid"></div>
+      </div>
     </div>
 
     <!-- ═════ Guests Tab ═════ -->
@@ -658,12 +664,13 @@ tr:hover td { background: #faf7f2; }
       <!-- Bulk Contact Center -->
       <div class="card" style="margin-bottom:1rem;">
         <h2 class="serif">📨 מרכז שליחת הזמנות</h2>
-        <p class="muted" style="margin-bottom:1rem;">לחץ על WA או SMS ליד כל אורח - ההודעה תיפתח מוכנה עם הקישור האישי.</p>
+        <p class="muted" style="margin-bottom:1rem;">ליד כל אורח — WA או SMS נפתחים עם ההודעה והקישור האישי. <strong>וואטסאפ אינה תומכת בשליחה אמיתית לכל המספרים בלחיצה אחת</strong> מהדפדפן (חוסם טאבים / אין Broadcast). להמונים: ספק SMS עסקי (Twilio, 019, CELLACT וכו׳), או WhatsApp Business API.</p>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1rem;">
           <button class="btn btn-wa" onclick="sendNextGuest('wa')">💬 שלח לאורח הבא בוואטסאפ</button>
           <button class="btn btn-sms" onclick="sendNextGuest('sms')">📱 שלח לאורח הבא ב-SMS</button>
-          <button class="btn btn-wa" onclick="sendAllGuests('wa')">📣 שלח לכולם בוואטסאפ</button>
-          <button class="btn btn-sms" onclick="sendAllGuests('sms')">📣 שלח לכולם ב-SMS</button>
+          <button class="btn btn-wa" onclick="sendAllGuestsSequential('wa')">📣 וואטסאפ לכולם (אחד־אחד + אישור)</button>
+          <button class="btn btn-sms" onclick="sendAllGuestsSequential('sms')">📣 SMS לכולם (אחד־אחד + אישור)</button>
+          <button class="btn btn-secondary" onclick="downloadInviteMessagesBulkFile()">⬇ הורד קובץ הודעות (כל האורחים)</button>
         </div>
         <div class="contact-progress" id="contactProgress"></div>
       </div>
@@ -684,6 +691,13 @@ tr:hover td { background: #faf7f2; }
             <div>
               <label for="g-guests-count">כמות אורחים (ברירת מחדל 1)</label>
               <input type="number" id="g-guests-count" min="1" max="99" value="1">
+            </div>
+            <div>
+              <label for="g-invite-side">צד הזמנה (קירבה) — קישור ביט באתר</label>
+              <select id="g-invite-side" required>
+                <option value="groom">צד חתן (ברירת מחדל)</option>
+                <option value="bride">צד כלה</option>
+              </select>
             </div>
             <div>
               <label for="g-category">קטגוריה *</label>
@@ -731,6 +745,11 @@ tr:hover td { background: #faf7f2; }
             <option value="coming">✔️ מאשר</option>
             <option value="not_coming">❌ לא מגיע</option>
           </select>
+          <select id="f-side">
+            <option value="">כל הצדדים</option>
+            <option value="groom">צד חתן</option>
+            <option value="bride">צד כלה</option>
+          </select>
         </div>
 
         <div class="table-wrap">
@@ -739,6 +758,7 @@ tr:hover td { background: #faf7f2; }
               <tr>
                 <th>שם</th>
                 <th>טלפון</th>
+                <th>קירבה</th>
                 <th>קטגוריה</th>
                 <th>כמות</th>
                 <th>סטטוס</th>
@@ -771,8 +791,10 @@ tr:hover td { background: #faf7f2; }
       <div class="card">
         <h2 class="serif">ייבוא מרשימת אורחים (Excel / CSV)</h2>
         <p class="muted" style="margin-bottom:1rem;">
-          ניתן להעלות קובץ Excel או CSV בפורמט פשוט: <code>full_name,phone</code> (ללא עמודת כמות בקובץ).<br>
-          לכל שורה ייקבע אוטומטית <strong>כמות = 1</strong> עד שינוי באתר או באדמין. עמודה שלישית אופציונלית: קטגוריה — אם חסרה: <code>רשימת תפוצה</code>
+          <strong>פורמט מומלץ (שורת כותרות + נתונים):</strong> <code>שם מלא, קירבה, מספר פלאפון</code> וכותרות בעברית או באנגלית (<code>full_name, side, phone</code>).<br>
+          בעמודת <strong>קירבה</strong> יש לכתוב <code>חתן</code> או <code>כלה</code> (או bride/groom) — כדי לפלח באדמין וכדי שהאתר יציג את <strong>קישור הביט</strong> המתאים. אם הקירבה ריקה או לא מזוהה — נחשב <strong>צד חתן</strong>.<br>
+          עמודה רביעית אופציונלית: <strong>קטגוריה</strong>. אם חסרה: <code>רשימת תפוצה</code>.<br>
+          <strong>תאימות לאחור:</strong> קבצים ישנים בשלוש עמודות <code>שם, טלפון, קטגוריה</code> — עדיין נתמכים.
         </p>
         <input type="file" id="csvFile" accept=".csv,.xlsx,.xls">
         <button class="btn btn-primary" style="margin-top:0.75rem;" onclick="importGuestFile()">📥 ייבא</button>
@@ -791,8 +813,28 @@ tr:hover td { background: #faf7f2; }
 
       <div class="card">
         <h2 class="serif">תבנית להורדה</h2>
-        <p class="muted" style="margin-bottom:1rem;">הורד תבנית ריקה למילוי ב-Excel/Google Sheets ואז ייבא אותה.</p>
+        <p class="muted" style="margin-bottom:1rem;">עמודות: <strong>שם מלא · קירבה (חתן/כלה) · מספר פלאפון</strong>. אופציונלי: קטגוריה.</p>
         <button class="btn btn-secondary" onclick="downloadTemplate()">⬇ הורד תבנית</button>
+      </div>
+
+      <div class="card">
+        <h2 class="serif">תבניות להודעות (ידני / ספק SMS)</h2>
+        <p class="muted" style="margin-bottom:1rem;">
+          שליחה אוטומטית חודש לפני וימים לפני האירוע דורשת <strong>שירות SMS</strong> (למשל Twilio) ו־cron בשרת או Edge Function ב-Supabase — זה לא מובנה בדף הסטטי הזה. להלן טקסטים מוכנים להדבקה או ליצוא מהמערכת.
+        </p>
+        <div style="display:flex; flex-direction:column; gap:1rem;">
+          <div>
+            <label>חודש לפני — לכל הרשימה (קישור כללי ל־RSVP)</label>
+            <textarea id="tpl-month-before" rows="8" readonly style="margin-top:0.35rem; font-size:0.9rem;"></textarea>
+            <button type="button" class="btn btn-secondary btn-icon" style="margin-top:0.5rem;" onclick="copyEl('tpl-month-before')">העתק</button>
+          </div>
+          <div>
+            <label>ימים לפני — רק למי שאישר הגעה (יש להזין לכל אורח את הקישור האישי עם הטוקן)</label>
+            <textarea id="tpl-gift-reminder" rows="8" readonly style="margin-top:0.35rem; font-size:0.9rem;"></textarea>
+            <button type="button" class="btn btn-secondary btn-icon" style="margin-top:0.5rem;" onclick="copyEl('tpl-gift-reminder')">העתק</button>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="fillMessageTemplatesExample()">מלא דוגמה עם קישורים מהאתר</button>
+        </div>
       </div>
     </div>
 
@@ -831,6 +873,7 @@ let allQuestions = [];
 let currentGuestForLink = null;
 let isAppVisible = false;
 let isRecoveryMode = false;
+let bulkSequentialState = null;
 
 // ═══════════════════════════════════════════════════════════════════
 // Auth (Supabase email/password)
@@ -978,6 +1021,7 @@ async function refreshAll() {
   renderOverview();
   renderGuests();
   renderQuestions();
+  fillMessageTemplatesExample();
 }
 
 async function loadGuests() {
@@ -994,6 +1038,30 @@ async function loadQuestions() {
   const badge = document.getElementById('questionsBadge');
   if (pending > 0) { badge.textContent = pending; badge.style.display = 'inline-block'; }
   else badge.style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Guest "side" (קירבה) — ביט באתר + פילוח
+// ═══════════════════════════════════════════════════════════════════
+function guestSideRaw(g) {
+  return g && g.invite_side === 'bride' ? 'bride' : 'groom';
+}
+
+function sideLabelHeGuest(g) {
+  return guestSideRaw(g) === 'bride' ? 'כלה' : 'חתן';
+}
+
+function exportBasenameStem() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `matan-priel-${y}-${m}-${day}`;
+}
+
+function siteBaseUrl() {
+  const u = (WEDDING_CONFIG.SITE_URL || '').trim();
+  return u.replace(/\/+$/, '');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1046,8 +1114,7 @@ function renderOverview() {
   const catGrid = document.getElementById('categoryGrid');
   if (Object.keys(cats).length === 0) {
     catGrid.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>עדיין לא נוספו אורחים</div>';
-    return;
-  }
+  } else {
   catGrid.innerHTML = Object.entries(cats).map(([name, s]) => {
     const cP = s.total ? s.c / s.total * 100 : 0;
     const dP = s.total ? s.d / s.total * 100 : 0;
@@ -1068,6 +1135,46 @@ function renderOverview() {
       </div>
     `;
   }).join('');
+  }
+
+  // Side breakdown (קירבה — ביט באתר)
+  const sides = {};
+  const sideLabel = (k) => (k === 'bride' ? 'צד כלה' : 'צד חתן');
+  allGuests.forEach(g => {
+    const k = guestSideRaw(g);
+    if (!sides[k]) sides[k] = { total: 0, c: 0, d: 0, p: 0 };
+    sides[k].total += 1;
+    if (g.rsvp_status === 'coming') sides[k].c++;
+    else if (g.rsvp_status === 'not_coming') sides[k].d++;
+    else sides[k].p++;
+  });
+  const sideGridEl = document.getElementById('sideGrid');
+  if (!sideGridEl) return;
+  const keys = ['groom', 'bride'].filter(k => sides[k]);
+  if (keys.length === 0) {
+    sideGridEl.innerHTML = '<div class="empty"><div class="empty-icon">⚖️</div>עדיין אין נתוני צד</div>';
+  } else {
+    sideGridEl.innerHTML = keys.map(k => {
+      const s = sides[k];
+      const cP = s.total ? s.c / s.total * 100 : 0;
+      const dP = s.total ? s.d / s.total * 100 : 0;
+      const pP = s.total ? s.p / s.total * 100 : 0;
+      return `
+      <div class="cat-card">
+        <h4>${sideLabel(k)} <span class="total">${s.total}</span></h4>
+        <div class="cat-stats">
+          <span>✓ <span class="c">${s.c}</span></span>
+          <span>✗ <span class="d">${s.d}</span></span>
+          <span>⏱ <span class="p">${s.p}</span></span>
+        </div>
+        <div class="progress-bar">
+          <div class="seg c" style="width:${cP}%"></div>
+          <div class="seg d" style="width:${dP}%"></div>
+          <div class="seg p" style="width:${pP}%"></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1077,10 +1184,12 @@ function renderGuests() {
   const search = document.getElementById('f-search').value.toLowerCase();
   const catF = document.getElementById('f-category').value;
   const statF = document.getElementById('f-status').value;
+  const sideF = document.getElementById('f-side').value;
 
   let filtered = allGuests.filter(g => {
     if (catF && g.category !== catF) return false;
     if (statF && g.rsvp_status !== statF) return false;
+    if (sideF && guestSideRaw(g) !== sideF) return false;
     if (search && !g.full_name.toLowerCase().includes(search) && !(g.phone || '').includes(search)) return false;
     return true;
   });
@@ -1089,7 +1198,7 @@ function renderGuests() {
 
   const tbody = document.getElementById('guestsTable');
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:2rem;" class="muted">אין תוצאות</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:2rem;" class="muted">אין תוצאות</td></tr>`;
     return;
   }
 
@@ -1103,6 +1212,9 @@ function renderGuests() {
         <strong>${escapeHtml(g.full_name)}</strong>
       </td>
       <td>${escapeHtml(g.phone || '–')}</td>
+      <td>
+        <button type="button" class="link-btn" onclick="toggleGuestInviteSide('${g.id}')" title="לחץ להחלפת צד (ביט)">${escapeHtml(sideLabelHeGuest(g))}</button>
+      </td>
       <td>${escapeHtml(g.category)}</td>
       <td>${g.rsvp_status === 'coming' ? (Number(g.guests_count) > 0 ? Number(g.guests_count) : 1) : '–'}</td>
       <td><span class="status-pill status-${g.rsvp_status}">${statusLabels[g.rsvp_status]}</span></td>
@@ -1119,9 +1231,10 @@ function renderGuests() {
   `;}).join('');
 }
 
-['f-search', 'f-category', 'f-status'].forEach(id =>
-  document.getElementById(id).addEventListener('input', () => { renderGuests(); updateContactProgress(); })
-);
+['f-search', 'f-category', 'f-status', 'f-side'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => { renderGuests(); updateContactProgress(); });
+});
 
 // Update progress when guests load
 const originalRender = renderGuests;
@@ -1137,6 +1250,7 @@ document.getElementById('addGuestForm').addEventListener('submit', async (e) => 
   const payload = {
     full_name: document.getElementById('g-name').value.trim(),
     phone: document.getElementById('g-phone').value.trim() || null,
+    invite_side: document.getElementById('g-invite-side').value === 'bride' ? 'bride' : 'groom',
     category: document.getElementById('g-category').value,
     guests_count
   };
@@ -1153,6 +1267,16 @@ async function deleteGuest(id) {
   const { error } = await supa.from('guests').delete().eq('id', id);
   if (error) { toast('שגיאה: ' + error.message, 'error'); return; }
   toast('נמחק', 'success');
+  refreshAll();
+}
+
+async function toggleGuestInviteSide(id) {
+  const g = allGuests.find(x => x.id === id);
+  if (!g) return;
+  const next = guestSideRaw(g) === 'groom' ? 'bride' : 'groom';
+  const { error } = await supa.from('guests').update({ invite_side: next }).eq('id', id);
+  if (error) { toast('שגיאה: ' + error.message, 'error'); return; }
+  toast('עודכן צד הזמנה', 'success');
   refreshAll();
 }
 
@@ -1185,13 +1309,9 @@ function showLink(id) {
   const g = allGuests.find(x => x.id === id);
   currentGuestForLink = g;
   const url = `${WEDDING_CONFIG.SITE_URL}?t=${g.token}`;
-  document.getElementById('linkGuestName').textContent = `${g.full_name} · ${g.category}`;
+  document.getElementById('linkGuestName').textContent = `${g.full_name} · קירבה: ${sideLabelHeGuest(g)} · ${g.category}`;
   document.getElementById('linkUrl').value = url;
-  document.getElementById('linkMessage').value =
-    `היי ${g.full_name.split(' ')[0]} 💍✨🥂\n\n` +
-    `אנחנו - מתן ופריאל - מתחתנים ב-28.6.2026 ושמחים להזמין אותך! 🥂\n\n` +
-    `קישור לאישור הגעה:\n${url}\n\n` +
-    `נשמח לראות אותך איתנו 💍✨`;
+  document.getElementById('linkMessage').value = buildInviteMessage(g);
   document.getElementById('linkModal').classList.add('show');
 }
 
@@ -1274,6 +1394,79 @@ async function deleteQuestion(id) {
 // ═══════════════════════════════════════════════════════════════════
 const DEFAULT_IMPORT_CATEGORY = 'רשימת תפוצה';
 
+function normalizeSide(cell) {
+  const s = String(cell || '').trim().toLowerCase();
+  if (!s) return 'groom';
+  if (s.includes('כלה') || s === 'bride' || s === 'b' || s === 'kala') return 'bride';
+  if (s.includes('חתן') || s === 'groom' || s === 'g' || s === 'hatan') return 'groom';
+  return 'groom';
+}
+
+function looksLikeIsraeliPhone(cell) {
+  const d = String(cell || '').replace(/\D/g, '');
+  return d.length >= 9 && d.length <= 13;
+}
+
+function columnMapFromHeader(row) {
+  if (!row || !row.length) return null;
+  const cells = row.map(c => String(c == null ? '' : c).trim());
+  let iName = -1, iSide = -1, iPhone = -1, iCat = -1;
+  for (let i = 0; i < cells.length; i++) {
+    const L = cells[i].toLowerCase().replace(/\s+/g, ' ').trim();
+    if (/^full_name$/i.test(L) || L === 'name' || (L.includes('שם') && (L.includes('מלא') || L === 'שם'))) iName = i;
+    else if (L === 'side' || L.includes('קירבה') || L.includes('צד')) iSide = i;
+    else if (
+      L.includes('phone') || L.includes('טלפון') || L.includes('פלאפון') ||
+      L.includes('מספר') || /^mobile$/i.test(L)
+    ) iPhone = i;
+    else if (L.includes('קטגוריה') || L === 'category') iCat = i;
+  }
+  if (iName >= 0 && iPhone >= 0) return { iName, iSide, iPhone, iCat };
+  return null;
+}
+
+function parseGuestRowToPayload(cells, map) {
+  const c = Array.isArray(cells) ? cells.map(x => String(x == null ? '' : x).trim()) : [];
+
+  if (map) {
+    const name = c[map.iName] || '';
+    if (!name) return null;
+    return {
+      full_name: name,
+      invite_side: map.iSide >= 0 ? normalizeSide(c[map.iSide]) : 'groom',
+      phone: c[map.iPhone] || null,
+      category: map.iCat >= 0 ? (String(c[map.iCat] || '').trim() || DEFAULT_IMPORT_CATEGORY) : DEFAULT_IMPORT_CATEGORY,
+      guests_count: 1
+    };
+  }
+
+  if (looksLikeIsraeliPhone(c[1])) {
+    const name = c[0] || '';
+    if (!name) return null;
+    return {
+      full_name: name,
+      invite_side: 'groom',
+      phone: c[1] || null,
+      category: String(c[2] || '').trim() || DEFAULT_IMPORT_CATEGORY,
+      guests_count: 1
+    };
+  }
+
+  if (looksLikeIsraeliPhone(c[2])) {
+    const name = c[0] || '';
+    if (!name) return null;
+    return {
+      full_name: name,
+      invite_side: normalizeSide(c[1]),
+      phone: c[2] || null,
+      category: String(c[3] || '').trim() || DEFAULT_IMPORT_CATEGORY,
+      guests_count: 1
+    };
+  }
+
+  return null;
+}
+
 async function importGuestFile() {
   const file = document.getElementById('csvFile').files[0];
   if (!file) { toast('בחר קובץ', 'error'); return; }
@@ -1310,13 +1503,14 @@ async function parseGuestRowsFromFile(file) {
     matrix = lines.map(parseCSVLine);
   }
 
-  const bodyRows = matrix.slice(1);
-  return bodyRows.map((cells) => ({
-    full_name: String(cells?.[0] || '').trim(),
-    phone: String(cells?.[1] || '').trim() || null,
-    category: String(cells?.[2] || '').trim() || DEFAULT_IMPORT_CATEGORY,
-    guests_count: 1
-  })).filter(r => r.full_name);
+  const headerMap = columnMapFromHeader(matrix[0]);
+  const bodyRows = headerMap ? matrix.slice(1) : matrix;
+  const out = [];
+  for (const row of bodyRows) {
+    const payload = parseGuestRowToPayload(row, headerMap);
+    if (payload) out.push(payload);
+  }
+  return out;
 }
 
 function parseCSVLine(line) {
@@ -1341,18 +1535,20 @@ function exportCSV(type) {
       q.guest_name, q.question_text, q.status, q.answer_text || '',
       new Date(q.created_at).toLocaleString('he-IL')
     ]);
-    filename = 'wedding-questions.csv';
+    filename = `shealot-${exportBasenameStem()}.csv`;
   } else {
     const statusLabels = { coming: '✔️ מאשר', not_coming: '❌ לא מגיע', pending: '⏳ לא ענה' };
     let data = allGuests;
     if (type === 'coming') data = data.filter(g => g.rsvp_status === 'coming');
-    header = ['שם', 'טלפון', 'קטגוריה', 'כמות', 'סטטוס', 'הערות'];
+    header = ['שם', 'טלפון', 'קירבה', 'קטגוריה', 'כמות', 'סטטוס', 'הערות'];
     rows = data.map(g => [
-      g.full_name, g.phone || '', g.category,
+      g.full_name, g.phone || '', sideLabelHeGuest(g), g.category,
       g.rsvp_status === 'coming' ? (Number(g.guests_count) > 0 ? Number(g.guests_count) : 1) : 0,
       statusLabels[g.rsvp_status], g.notes || ''
     ]);
-    filename = type === 'coming' ? 'wedding-confirmed.csv' : 'wedding-all.csv';
+    filename = type === 'coming'
+      ? `orcahim-meusharim-${exportBasenameStem()}.csv`
+      : `orcahim-kulam-${exportBasenameStem()}.csv`;
   }
   const csv = '\uFEFF' + [header, ...rows].map(r =>
     r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
@@ -1364,14 +1560,22 @@ function exportCSV(type) {
 function downloadTemplate() {
   const template =
     '\uFEFF' +
-    'full_name,phone\n' +
-    'יוסי כהן,0501234567\n' +
-    'שרה לוי,0509876543\n';
-  downloadFile(template, 'wedding-template.csv');
+    'שם מלא,קירבה,מספר פלאפון,קטגוריה\n' +
+    'יוסי כהן,חתן,0501234567,חברים שלי\n' +
+    'שרה לוי,כלה,0509876543,חברים שלה\n';
+  downloadFile(template, `tavnit-orcahim-${exportBasenameStem()}.csv`);
 }
 
 function downloadFile(content, filename) {
   const blob = new Blob([content], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadTextFile(content, filename) {
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = filename; a.click();
@@ -1393,22 +1597,75 @@ function toast(msg, type = '') {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
+function copyEl(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  navigator.clipboard.writeText(el.value).then(() => toast('הועתק', 'success')).catch(() => toast('העתקה נכשלה', 'error'));
+}
+
+function fillMessageTemplatesExample() {
+  const base = siteBaseUrl();
+  const demoName = allGuests.length ? allGuests[0].full_name : 'שם מהאקסל';
+  const demoPersonal = allGuests.length && allGuests[0].token
+    ? `${base}/?t=${allGuests[0].token}`
+    : `${base}/?t=הטוקן_של_האורח`;
+  const monthEl = document.getElementById('tpl-month-before');
+  const giftEl = document.getElementById('tpl-gift-reminder');
+  if (!monthEl || !giftEl) return;
+  monthEl.value =
+    `היי 👋 ${demoName}
+
+אנחנו — מתן ופריאל — מתחתנים
+בי״ג תמוז (28.6.26) שמחים להזמינך להשתתף בשמחתנו 🥂
+
+קישור לאישור הגעה:
+
+${base}/
+
+נשמח לראותך איתנו 🤍💍`;
+
+  giftEl.value =
+    `היי 😊
+מתרגשים ממש לראות אותך בקרוב!
+
+למי שרוצה להסדיר מתנה מראש (כדי להימנע ממעטפות באירוע), אפשר כאן:
+${demoPersonal}
+
+נתראה בקרוב 💛`;
+}
+
+function buildGiftReminderForGuest(g) {
+  const link = `${siteBaseUrl()}/?t=${g.token}`;
+  const firstName = String(g.full_name || 'אורח').split(/\s+/)[0];
+  return `היי 😊 ${firstName}
+מתרגשים ממש לראות אותך בקרוב!
+
+למי שרוצה להסדיר מתנה מראש (כדי להימנע ממעטפות באירוע), אפשר כאן:
+${link}
+
+נתראה בקרוב 💛`;
+}
+
 
 // ═══════════════════════════════════════════════════════════════════
 // WhatsApp + SMS Bulk Contact System
 // ═══════════════════════════════════════════════════════════════════
 
-// Generate message template for a guest
+// Generate message template for a guest (קישור אישי עם טוקן)
 function buildInviteMessage(guest) {
   const token = guest.token || guest.id;
-  const link = `${WEDDING_CONFIG.SITE_URL}?t=${token}`;
+  const link = `${siteBaseUrl()}/?t=${token}`;
   const fullName = guest.full_name || 'אורח/ת';
-  return `היי 👋 ${fullName}\n` +
-    `אנחנו מתן ופריאל - מתחתנים\n` +
-    `ב י״ג תמוז (28.6.26) שמחים להזמינך להשתתף בשמחתנו 🥂\n\n` +
-    `קישור לאישור הגעה:\n\n` +
-    `${link}\n\n` +
-    `נשמח לראותכם בין אורחינו🤍💍`;
+  return `היי 👋 ${fullName}
+
+אנחנו — מתן ופריאל — מתחתנים
+בי״ג תמוז (28.6.26) שמחים להזמינך להשתתף בשמחתנו 🥂
+
+קישור לאישור הגעה:
+
+${link}
+
+נשמח לראותך איתנו 🤍💍`;
 }
 
 // Format phone for wa.me (international format)
@@ -1501,9 +1758,11 @@ function sendSMS(guestId) {
 // Bulk send - opens next uncontacted guest
 function sendNextGuest(channel) {
   const filter = document.getElementById('f-category').value;
+  const sideF = document.getElementById('f-side').value;
   const pending = allGuests.filter(g => {
     if (isContacted(g.id)) return false;
     if (filter && g.category !== filter) return false;
+    if (sideF && guestSideRaw(g) !== sideF) return false;
     return g.phone;
   });
   if (pending.length === 0) {
@@ -1515,26 +1774,80 @@ function sendNextGuest(channel) {
   else sendSMS(next.id);
 }
 
-function sendAllGuests(channel) {
-  const filter = document.getElementById('f-category').value;
+function sendAllGuestsSequential(channel) {
+  const catF = document.getElementById('f-category').value;
+  const sideF = document.getElementById('f-side').value;
   const pending = allGuests.filter(g => {
-    if (filter && g.category !== filter) return false;
-    return !!g.phone;
+    if (!g.phone || !formatPhoneIntl(g.phone)) return false;
+    if (catF && g.category !== catF) return false;
+    if (sideF && guestSideRaw(g) !== sideF) return false;
+    return true;
   });
   if (pending.length === 0) {
-    toast('לא נמצאו אורחים עם טלפון לשליחה', 'error');
+    toast('לא נמצאו אורחים עם טלפון תקין (בהתאם למסננים)', 'error');
     return;
   }
 
-  const ok = confirm(`לפתוח ${pending.length} הודעות ${channel === 'wa' ? 'וואטסאפ' : 'SMS'}?`);
+  const ok = confirm(
+    `ייפתחו עד ${pending.length} חלונות אחד־אחד.\nלאחר כל פתיחה תתבקשו לאשר לפני האורח הבא — כך הדפדפן לא יחסום את כל הטאבים.\n\nמתחילים עם ${pending[0].full_name}?`
+  );
   if (!ok) return;
 
-  pending.forEach((g, idx) => {
-    setTimeout(() => {
-      if (channel === 'wa') sendWhatsApp(g.id);
-      else sendSMS(g.id);
-    }, idx * 550);
+  bulkSequentialState = { list: pending, idx: 0, channel };
+  runBulkSequentialStep();
+}
+
+function runBulkSequentialStep() {
+  const st = bulkSequentialState;
+  if (!st || st.idx >= st.list.length) {
+    bulkSequentialState = null;
+    renderGuests();
+    updateContactProgress();
+    toast('סיימת את הרצף', 'success');
+    return;
+  }
+
+  const g = st.list[st.idx];
+  if (st.channel === 'wa') sendWhatsApp(g.id);
+  else sendSMS(g.id);
+  st.idx++;
+
+  const rest = st.list.length - st.idx;
+  renderGuests();
+  updateContactProgress();
+
+  if (rest <= 0) {
+    bulkSequentialState = null;
+    toast('נפתחה ההודעה האחרונה', 'success');
+    return;
+  }
+
+  const nextGuest = st.list[st.idx];
+  setTimeout(() => {
+    const go = confirm(
+      `נפתחה הודעה ל־"${g.full_name}".\n\nלפתוח את הבא "${nextGuest.full_name}"? (נותרו ${rest})`
+    );
+    if (go) runBulkSequentialStep();
+    else {
+      bulkSequentialState = null;
+      toast('הרצף הופסק', '');
+    }
+  }, 400);
+}
+
+function downloadInviteMessagesBulkFile() {
+  const lines = [];
+  const coming = allGuests.filter(g => g.rsvp_status === 'coming' && g.phone);
+  allGuests.filter(g => g.phone).forEach(g => {
+    lines.push(`${g.full_name}\t${formatPhoneIntl(g.phone)}\n${buildInviteMessage(g)}`);
   });
+  let body = '=== הזמנה (כל מוזמין) ===\n\n' + lines.join('\n\n---\n\n');
+  body += `\n\n\n=== תזכורת מתנה (דוגמה — רק מאשרי הגעה, ${coming.length} אורחים) ===\n\n`;
+  coming.forEach(g => {
+    body += `${g.full_name}\t${formatPhoneIntl(g.phone)}\n${buildGiftReminderForGuest(g)}\n\n---\n\n`;
+  });
+  downloadTextFile(body, `hodot-bulk-${exportBasenameStem()}.txt`);
+  toast('קובץ הורד', 'success');
 }
 
 </script>

@@ -534,7 +534,7 @@ function updateGreeting() {
 async function init() {
     updateCountdown();
     setInterval(updateCountdown, 1000);
-    wireBitPayMeButton();
+    wireBitPayMeButton(null);
 
     if (!guestToken) {
         // No ID param - show manual form (fallback)
@@ -562,6 +562,7 @@ async function init() {
         if (error || !data) throw error || new Error('Guest not found');
 
         currentGuest = data;
+        wireBitPayMeButton(data);
         document.getElementById('loading-overlay').classList.add('hidden');
         document.getElementById('rsvp-content').classList.remove('hidden');
         updateGreeting();
@@ -740,13 +741,20 @@ async function sendBlessing() {
     }
 }
 
-function getBitPayMeUrl() {
-    const u = (window.WEDDING_CONFIG && window.WEDDING_CONFIG.BIT_PAY_ME_URL) || '';
-    return String(u).trim();
+function getBitPayMeUrlForGuest(guest) {
+    const cfg = window.WEDDING_CONFIG || {};
+    const groom = String(cfg.BIT_PAY_ME_URL || cfg.BIT_PAY_ME_URL_GROOM || '').trim();
+    const bride = String(cfg.BIT_PAY_ME_URL_BRIDE || '').trim();
+    if (guest && guest.invite_side === 'bride' && bride) return bride;
+    return groom;
 }
 
-function wireBitPayMeButton() {
-    const url = getBitPayMeUrl();
+function getBitPayMeUrl() {
+    return getBitPayMeUrlForGuest(currentGuest);
+}
+
+function wireBitPayMeButton(guest) {
+    const url = getBitPayMeUrlForGuest(guest != null ? guest : currentGuest);
     const a = document.getElementById('bit-pay-me-btn');
     if (!a || !url) return;
     a.href = url;
