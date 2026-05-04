@@ -196,7 +196,6 @@ body {
 .attend-btn.yes.selected { background: #e8f5e9; border-color: #4caf50; color: #2e7d32; }
 .attend-btn.no.selected { background: #fce4ec; border-color: #e91e63; color: #c2185b; }
 #count-section { margin-top: 4px; margin-bottom: 8px; }
-.muted { color: var(--text); opacity: 0.75; }
 .btn {
     width: 100%;
     padding: 14px;
@@ -252,6 +251,11 @@ body {
     border: 2px solid #ddd;
     margin: 12px auto;
     display: block;
+}
+/* Bit flow is link-only in production (no QR/manual number). */
+#gift-bit .qr-img,
+#gift-bit p[data-he*="סרקו לתשלום בביט"] {
+    display: none !important;
 }
 .faq-item { border: 1px solid #eee; border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
 .faq-q {
@@ -415,7 +419,6 @@ body {
             <a id="bit-pay-me-btn" class="btn btn-blue hidden" style="margin-top:10px;" href="#" target="_blank" rel="noopener noreferrer">
                 <span data-he="💸 תשלום ב-Bit (קישור אישי)" data-en="💸 Pay with Bit (personal link)" data-am="💸 በBit (የግል አገናኝ)">💸 תשלום ב-Bit (קישור אישי)</span>
             </a>
-            <p class="muted" style="margin-top:8px;font-size:0.85rem;text-align:center;" data-he="שליחת כסף אוטומטית מהדף אינה אפשרית — חובה לאשר באפליקציית Bit. לחוויה הכי קצרה: הוסיפו ב־config.js את הקישור האישי שלכם מ-Bit Pay בשדה BIT_PAY_ME_URL. במובייל, לשונית ״ביט״ תנסה לפתוח את האפליקציה." data-en="Money cannot be sent automatically from a web page—you must confirm in the Bit app. For the shortest flow, add your Bit Pay personal payment link in config.js as BIT_PAY_ME_URL. On mobile, the Bit tab tries to open the app." data-am="ገንዘብ ከድረ-ገጽ በራስ-ሰር ሊላክ አይችልም — በBit መተግበሪያ መፍቀድ ያስፈልጋል። የBit Pay የግል አገናን በconfig.js BIT_PAY_ME_URL ውስጥ ያክሉ። በሞባይል የBit ትር መተግበሪያውን ይከፍታል።">שליחת כסף אוטומטית מהדף אינה אפשרית — חובה לאשר באפליקציית Bit. לחוויה הכי קצרה: הוסיפו ב־config.js את הקישור האישי שלכם מ-Bit Pay בשדה BIT_PAY_ME_URL. במובייל, לשונית ״ביט״ תנסה לפתוח את האפליקציה.</p>
         </div>
         <div id="gift-paybox" class="gift-content">
             <p style="margin-bottom:12px; color:var(--text); font-size:0.9rem;" data-he="לחצו לתשלום בפייבוקס" data-en="Click to pay via PayBox" data-am="በPayBox ለመክፈል ጠቅ ያድርጉ">לחצו לתשלום בפייבוקס</p>
