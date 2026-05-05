@@ -1,27 +1,10 @@
--- One-shot bootstrap for a fresh Supabase project.
--- Creates required tables, defaults, RLS policies, and public RPC helpers.
--- Run this file once in Supabase SQL Editor.
+-- Run once in Supabase SQL Editor (existing projects).
+-- Hardens public RPCs with validation, DB constraints, and least-privilege grants.
 
 begin;
 
-create extension if not exists pgcrypto;
-
--- ================================================================
--- Tables
--- ================================================================
-create table if not exists public.guests (
-  id uuid primary key default gen_random_uuid(),
-  full_name text not null,
-  phone text,
-  category text not null default 'אתר ציבורי',
-  invite_side text not null default 'groom' check (invite_side in ('groom', 'bride')),
-  token text not null unique default encode(gen_random_bytes(8), 'hex'),
-  rsvp_status text not null default 'pending' check (rsvp_status in ('pending', 'coming', 'not_coming')),
-  guests_count integer not null default 1,
-  notes text,
-  created_at timestamptz not null default now(),
-  responded_at timestamptz
-);
+update public.guests
+set guests_count = least(greatest(coalesce(guests_count, 1), 0), 8);
 
 alter table public.guests
   drop constraint if exists guests_guests_count_check;
@@ -30,58 +13,7 @@ alter table public.guests
   add constraint guests_guests_count_check
   check (guests_count between 0 and 8);
 
-create table if not exists public.questions (
-  id uuid primary key default gen_random_uuid(),
-  guest_name text not null,
-  question_text text not null,
-  status text not null default 'pending' check (status in ('pending', 'answered')),
-  answer_text text,
-  created_at timestamptz not null default now()
-);
-
-create index if not exists idx_guests_created_at on public.guests(created_at desc);
-create index if not exists idx_guests_token on public.guests(token);
-create index if not exists idx_questions_created_at on public.questions(created_at desc);
-create index if not exists idx_questions_status on public.questions(status);
-
--- ================================================================
--- RLS
--- ================================================================
-alter table public.guests enable row level security;
-alter table public.questions enable row level security;
-
-create or replace function public.is_admin_user()
-returns boolean
-language sql
-stable
-set search_path = public
-as $$
-  select lower(coalesce(auth.jwt() ->> 'email', '')) in (
-    'ic850536@gmail.com',
-    'matan.hdmi@gmail.com'
-  );
-$$;
-
-drop policy if exists "guests_admin_all" on public.guests;
-drop policy if exists "questions_admin_all" on public.questions;
-
-create policy "guests_admin_all"
-on public.guests
-for all
-to authenticated
-using (public.is_admin_user())
-with check (public.is_admin_user());
-
-create policy "questions_admin_all"
-on public.questions
-for all
-to authenticated
-using (public.is_admin_user())
-with check (public.is_admin_user());
-
--- ================================================================
--- Public RPC functions (for guest page)
--- ================================================================
+drop function if exists public.get_guest_by_token(text);
 create or replace function public.get_guest_by_token(p_token text)
 returns table(
   id uuid,
@@ -203,9 +135,9 @@ begin
     guests_count
   )
   values (
-    p_full_name,
-    nullif(p_phone, ''),
-    coalesce(nullif(p_category, ''), 'אתר ציבורי'),
+    trim(p_full_name),
+    nullif(trim(coalesce(p_phone, '')), ''),
+    coalesce(nullif(trim(coalesce(p_category, '')), ''), 'אתר ציבורי'),
     lower(trim(p_rsvp_status)),
     least(greatest(coalesce(p_guests_count, 1), 0), 8)
   )
@@ -240,8 +172,8 @@ begin
     question_text
   )
   values (
-    p_guest_name,
-    p_question_text
+    trim(p_guest_name),
+    trim(p_question_text)
   )
   returning * into v_row;
 
@@ -249,10 +181,10 @@ begin
 end;
 $$;
 
-grant execute on function public.get_guest_by_token(text) to anon, authenticated;
-grant execute on function public.submit_rsvp_by_token(text, text, integer, text) to anon, authenticated;
-grant execute on function public.submit_rsvp_manual(text, text, text, integer, text) to anon, authenticated;
-grant execute on function public.submit_question_public(text, text) to anon, authenticated;
+grant execute on function public.get_guest_by_token(text) to anon;
+grant execute on function public.submit_rsvp_by_token(text, text, integer, text) to anon;
+grant execute on function public.submit_rsvp_manual(text, text, text, integer, text) to anon;
+grant execute on function public.submit_question_public(text, text) to anon;
 
 revoke execute on function public.get_guest_by_token(text) from public;
 revoke execute on function public.submit_rsvp_by_token(text, text, integer, text) from public;

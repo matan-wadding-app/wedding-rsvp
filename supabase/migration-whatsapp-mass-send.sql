@@ -30,6 +30,7 @@ create table if not exists public.message_campaign_items (
 
 create index if not exists idx_message_campaigns_created_at on public.message_campaigns(created_at desc);
 create index if not exists idx_message_campaign_items_campaign on public.message_campaign_items(campaign_id);
+create index if not exists idx_message_campaign_items_guest_id on public.message_campaign_items(guest_id);
 
 alter table public.message_campaigns enable row level security;
 alter table public.message_campaign_items enable row level security;
@@ -41,12 +42,12 @@ create policy "message_campaigns_admin_all"
 on public.message_campaigns
 for all
 to authenticated
-using (true)
-with check (true);
+using (public.is_admin_user())
+with check (public.is_admin_user());
 
 create policy "message_campaign_items_admin_all"
 on public.message_campaign_items
 for all
 to authenticated
-using (true)
-with check (true);
+using (public.is_admin_user())
+with check (public.is_admin_user());
