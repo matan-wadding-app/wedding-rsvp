@@ -77,7 +77,7 @@ begin
   end if;
 
   v_status := lower(trim(coalesce(p_rsvp_status, '')));
-  if v_status not in ('pending', 'coming', 'not_coming') then
+  if v_status not in ('coming', 'not_coming') then
     raise exception 'Invalid RSVP status';
   end if;
 
@@ -123,7 +123,7 @@ begin
     raise exception 'Full name is required';
   end if;
 
-  if lower(trim(coalesce(p_rsvp_status, ''))) not in ('pending', 'coming', 'not_coming') then
+  if lower(trim(coalesce(p_rsvp_status, ''))) not in ('not_invited', 'pending', 'coming', 'not_coming') then
     raise exception 'Invalid RSVP status';
   end if;
 

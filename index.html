@@ -273,6 +273,27 @@ body {
 .thank-you-emoji { font-size: 3.5rem; margin-bottom: 12px; }
 .thank-you-text { font-size: 1.2rem; font-weight: 700; color: var(--gold); }
 .hidden { display: none !important; }
+.rsvp-inline-note {
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: rgba(243, 186, 47, 0.12);
+    border: 1px solid rgba(243, 186, 47, 0.35);
+    font-size: 0.92rem;
+    line-height: 1.45;
+    text-align: center;
+    color: var(--text);
+}
+.rsvp-save-flash {
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(74, 124, 89, 0.15);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-align: center;
+    color: #3d6b48;
+}
 @media (max-width: 380px) {
     .couple-title { font-size: 2.2rem; }
     .countdown-num { font-size: 1.5rem; }
@@ -349,7 +370,13 @@ body {
         <div id="rsvp-content" class="hidden">
             <div id="guest-greeting" style="text-align:center; margin-bottom:16px; font-size:1.2rem; color:var(--gold); font-weight:700;"></div>
 
+            <div id="rsvp-save-flash" class="rsvp-save-flash hidden"></div>
+
             <div id="rsvp-form">
+                <div id="rsvp-answered-note" class="rsvp-inline-note hidden"
+                    data-he="כבר נרשמה אצלנו תשובה בעבר. תמיד אפשר לעדכן כאן — לשמירה לחצו שוב על &quot;שלח אישור&quot;."
+                    data-en="We already have a response on file. You can change it any time — press &quot;Send RSVP&quot; again to save."
+                    data-am="መልስዎ ቀደም ሲል ተመዝግቧል። በማንኛውም ጊዜ ያዘምኑ — ለማስቀመጥ &quot;ማረጋገጫ ላክ&quot; ይጫኑ።">כבר נרשמה אצלנו תשובה בעבר. תמיד אפשר לעדכן כאן — לשמירה לחצו שוב על "שלח אישור".</div>
                 <div class="form-label" data-he="האם תגיעו?" data-en="Will you attend?" data-am="ትመጣላችሁ?">האם תגיעו?</div>
                 <div class="attendance-row">
                     <button class="attend-btn yes" onclick="selectAttend(true)" id="btn-yes">🎉 <span data-he="כן, מגיעים!" data-en="Yes, coming!" data-am="አዎ፣ እንመጣለን!">כן, מגיעים!</span></button>
@@ -372,15 +399,22 @@ body {
                     </div>
                 </div>
 
-                <button class="btn btn-gold" onclick="submitRsvp()" style="margin-top:8px">
+                <button class="btn btn-gold" onclick="submitRsvp()" id="rsvp-submit-btn" style="margin-top:8px">
                     <span data-he="שלח אישור ✓" data-en="Send RSVP ✓" data-am="ማረጋገጫ ላክ ✓">שלח אישור ✓</span>
                 </button>
+            </div>
+
+            <div id="rsvp-closed" class="hidden" style="text-align:center; padding:1rem 0; color:var(--text); opacity:0.92; line-height:1.6;">
+                <p data-he="חלון אישורי ההגעה נסגר. לשינוי או בקשה מיוחדת — צרו קשר עם הזוג."
+                   data-en="The RSVP window is closed. For changes, please contact the couple directly."
+                   data-am="የመምጣት ማረጋገጫ ዝግጁ ሆኗል። ለለውጦች ከጥንዶቹ ጋር ይወያዩ።">חלון אישורי ההגעה נסגר. לשינוי או בקשה מיוחדת — צרו קשר עם הזוג.</p>
             </div>
 
             <div id="thank-you" class="hidden">
                 <div class="thank-you">
                     <div class="thank-you-emoji">🎊</div>
-                    <div class="thank-you-text" data-he="תודה רבה! נשמח לראותכם!" data-en="Thank you! We can\'t wait to see you!" data-am="አመሰግናለሁ! ለማየታችሁ እናስባለን!">תודה רבה! נשמח לראותכם!</div>
+                    <div id="thank-you-msg-coming" class="thank-you-text hidden" data-he="תודה רבה! נשמח לראותכם!" data-en="Thank you! We can\'t wait to see you!" data-am="አመሰግናለሁ! ለማየታችሁ እናስባለን!">תודה רבה! נשמח לראותכם!</div>
+                    <div id="thank-you-msg-decline" class="thank-you-text hidden" data-he="תודה שעדכנתם — נתראה בטוב!" data-en="Thanks for letting us know — take care!" data-am="ስለማሳወቅዎ እናመሰግናለን!">תודה שעדכנתם — נתראה בטוב!</div>
                 </div>
             </div>
         </div>
@@ -493,7 +527,8 @@ function setLang(lang) {
     document.querySelector(`.lang-btn[onclick="setLang('${lang}')"]`).classList.add('active');
     document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
     document.querySelectorAll('[data-he]').forEach(el => {
-        el.textContent = el.getAttribute('data-' + lang) || el.getAttribute('data-he');
+        const t = el.getAttribute('data-' + lang) || el.getAttribute('data-he');
+        if (t != null) el.textContent = t;
     });
     updateGreeting();
     const qInput = document.getElementById('question-text');
@@ -542,11 +577,13 @@ async function init() {
     wireBitPayMeButton(null);
 
     if (!guestToken) {
-        // No ID param - show manual form (fallback)
-        document.getElementById('loading-overlay').classList.add('hidden');
-        document.getElementById('rsvp-content').classList.remove('hidden');
-        document.getElementById('manual-fields').classList.remove('hidden');
-        document.getElementById('guest-greeting').textContent = '';
+        // RSVP is allowed only from a personal invitation link.
+        const loading = document.getElementById('loading-overlay');
+        if (loading) {
+            loading.innerHTML = currentLang === 'he'
+                ? 'האישור זמין רק דרך קישור אישי שנשלח אליך.'
+                : 'RSVP is available only via your personal invitation link.';
+        }
         return;
     }
 
@@ -566,21 +603,54 @@ async function init() {
 
         if (error || !data) throw error || new Error('Guest not found');
 
+        if (typeof data.rsvp_closed === 'undefined') {
+            data.rsvp_closed = false;
+        }
+
         currentGuest = data;
         wireBitPayMeButton(data);
         document.getElementById('loading-overlay').classList.add('hidden');
         document.getElementById('rsvp-content').classList.remove('hidden');
         updateGreeting();
 
-        // Pre-select previous response if exists
-        if (data.rsvp_status && data.rsvp_status !== 'pending') {
-            if (data.rsvp_status === 'coming' && data.guests_count != null) {
-                const c = Math.max(1, Math.min(MAX_RSVP_GUESTS, Number(data.guests_count) || 1));
-                selectedCount = c;
-                const sel = document.getElementById('guest-count-select');
-                if (sel) sel.value = String(c);
+        const closed = !!data.rsvp_closed;
+        const answeredEarly = data.rsvp_status === 'coming' || data.rsvp_status === 'not_coming';
+        const formEl = document.getElementById('rsvp-form');
+        const closedEl = document.getElementById('rsvp-closed');
+        const thankEl = document.getElementById('thank-you');
+        const noteEl = document.getElementById('rsvp-answered-note');
+        const saveFlash = document.getElementById('rsvp-save-flash');
+        const tyComing = document.getElementById('thank-you-msg-coming');
+        const tyDecl = document.getElementById('thank-you-msg-decline');
+
+        if (saveFlash) saveFlash.classList.add('hidden');
+
+        if (closed && answeredEarly) {
+            if (closedEl) closedEl.classList.add('hidden');
+            if (formEl) formEl.classList.add('hidden');
+            if (noteEl) noteEl.classList.add('hidden');
+            if (thankEl) thankEl.classList.remove('hidden');
+            if (tyComing) tyComing.classList.toggle('hidden', data.rsvp_status !== 'coming');
+            if (tyDecl) tyDecl.classList.toggle('hidden', data.rsvp_status !== 'not_coming');
+        } else if (closed && !answeredEarly) {
+            if (closedEl) closedEl.classList.remove('hidden');
+            if (formEl) formEl.classList.add('hidden');
+            if (thankEl) thankEl.classList.add('hidden');
+            if (noteEl) noteEl.classList.add('hidden');
+        } else {
+            if (closedEl) closedEl.classList.add('hidden');
+            if (thankEl) thankEl.classList.add('hidden');
+            if (formEl) formEl.classList.remove('hidden');
+            if (noteEl) noteEl.classList.toggle('hidden', !answeredEarly);
+            if (answeredEarly) {
+                if (data.rsvp_status === 'coming' && data.guests_count != null) {
+                    const c = Math.max(1, Math.min(MAX_RSVP_GUESTS, Number(data.guests_count) || 1));
+                    selectedCount = c;
+                    const sel = document.getElementById('guest-count-select');
+                    if (sel) sel.value = String(c);
+                }
+                selectAttend(data.rsvp_status === 'coming');
             }
-            selectAttend(data.rsvp_status === 'coming');
         }
     } catch (err) {
         console.error('Init error:', err);
@@ -604,6 +674,19 @@ function selectAttend(yes) {
 }
 
 async function submitRsvp() {
+    if (!guestToken || !currentGuest) {
+        alert(currentLang === 'he'
+            ? 'ניתן לאשר הגעה רק דרך קישור אישי שנשלח אליך.'
+            : 'RSVP is available only through your personal invitation link.');
+        return;
+    }
+    if (currentGuest.rsvp_closed) {
+        alert(currentLang === 'he'
+            ? 'חלון אישורי ההגעה נסגר.'
+            : 'The RSVP window is closed.');
+        return;
+    }
+
     if (selectedAttendance === null) {
         alert(currentLang === 'he' ? 'אנא בחרו האם אתם מגיעים' : 'Please select attendance');
         return;
@@ -619,80 +702,63 @@ async function submitRsvp() {
     if (selectedAttendance) guests_count = Math.min(MAX_RSVP_GUESTS, Math.max(1, guests_count));
 
     try {
-        if (currentGuest && guestToken) {
-            let { data, error } = await sb.rpc('submit_rsvp_by_token', {
-                p_token: guestToken,
-                p_rsvp_status: rsvp_status,
-                p_guests_count: guests_count
-            });
+        let { data, error } = await sb.rpc('submit_rsvp_by_token', {
+            p_token: guestToken,
+            p_rsvp_status: rsvp_status,
+            p_guests_count: guests_count
+        });
 
-            if (isRpcMissing(error)) {
-                const updateData = {};
-                if ('rsvp_status' in currentGuest) updateData.rsvp_status = rsvp_status;
-                if ('guests_count' in currentGuest) updateData.guests_count = guests_count;
-                ({ data, error } = await sb
-                    .from('guests')
-                    .update(updateData)
-                    .eq('id', currentGuest.id)
-                    .select());
-            }
-
-            if (error) {
-                console.error('=== SUPABASE UPDATE ERROR ===');
-                console.error('Message:', error.message);
-                console.error('Details:', error.details);
-                console.error('Hint:', error.hint);
-                console.error('Code:', error.code);
-                console.error('Full error:', JSON.stringify(error, null, 2));
-                throw error;
-            }
-            console.log('Update success:', data);
-        } else {
-            // INSERT new guest (no id in URL / fallback)
-            const name = document.getElementById('manual-name').value.trim();
-            const phone = document.getElementById('manual-phone').value.trim();
-            if (!name || !phone) {
-                alert(currentLang === 'he' ? 'אנא מלאו שם וטלפון' : 'Please fill name and phone');
-                return;
-            }
-            let { data, error } = await sb.rpc('submit_rsvp_manual', {
-                p_full_name: name,
-                p_phone: phone,
-                p_rsvp_status: rsvp_status,
-                p_guests_count: guests_count
-            });
-
-            if (isRpcMissing(error) || error?.code === '23502') {
-                ({ data, error } = await sb
-                    .from('guests')
-                    .insert([{
-                        full_name: name,
-                        phone,
-                        category: DEFAULT_PUBLIC_CATEGORY,
-                        rsvp_status,
-                        guests_count
-                    }])
-                    .select());
-            }
-
-            if (error) {
-                console.error('=== SUPABASE INSERT ERROR ===');
-                console.error('Message:', error.message);
-                console.error('Details:', error.details);
-                console.error('Hint:', error.hint);
-                console.error('Code:', error.code);
-                console.error('Full error:', JSON.stringify(error, null, 2));
-                throw error;
-            }
-            console.log('Insert success:', data);
-            // Keep manual guest identity for follow-up actions (e.g., questions after RSVP).
-            currentGuest = { ...(currentGuest || {}), full_name: name, phone };
+        if (isRpcMissing(error)) {
+            const updateData = {};
+            if ('rsvp_status' in currentGuest) updateData.rsvp_status = rsvp_status;
+            if ('guests_count' in currentGuest) updateData.guests_count = guests_count;
+            ({ data, error } = await sb
+                .from('guests')
+                .update(updateData)
+                .eq('id', currentGuest.id)
+                .select());
         }
-        document.getElementById('rsvp-form').classList.add('hidden');
-        document.getElementById('thank-you').classList.remove('hidden');
+
+        if (error) {
+            console.error('=== SUPABASE UPDATE ERROR ===');
+            console.error('Message:', error.message);
+            console.error('Details:', error.details);
+            console.error('Hint:', error.hint);
+            console.error('Code:', error.code);
+            console.error('Full error:', JSON.stringify(error, null, 2));
+            throw error;
+        }
+        console.log('Update success:', data);
+
+        let fresh = null;
+        const r2 = await sb.rpc('get_guest_by_token', { p_token: guestToken }).single();
+        if (!r2.error && r2.data) fresh = r2.data;
+        if (fresh) {
+            if (typeof fresh.rsvp_closed === 'undefined') fresh.rsvp_closed = false;
+            currentGuest = fresh;
+        }
+
+        const flash = document.getElementById('rsvp-save-flash');
+        if (flash) {
+            const msg = {
+                he: 'התשובה נשמרה. אפשר לעדכן שוב בכל עת.',
+                en: 'Your response was saved. You can change it again any time.',
+                am: 'ምላሽዎ ተቀምጧል። በማንኛውም ጊዜ ሊቀየር ይችላል።'
+            };
+            flash.textContent = msg[currentLang] || msg.he;
+            flash.classList.remove('hidden');
+            window.clearTimeout(window.__rsvpFlashT);
+            window.__rsvpFlashT = window.setTimeout(() => flash.classList.add('hidden'), 5000);
+        }
+
+        const noteEl = document.getElementById('rsvp-answered-note');
+        if (noteEl && currentGuest && !currentGuest.rsvp_closed) noteEl.classList.remove('hidden');
     } catch (err) {
         console.error('Submit caught error:', err);
-        const errMsg = (err && err.message) ? err.message : 'Unknown';
+        let errMsg = (err && err.message) ? err.message : 'Unknown';
+        if (/deadline has passed/i.test(errMsg)) {
+            errMsg = currentLang === 'he' ? 'חלון אישורי ההגעה נסגר.' : 'The RSVP deadline has passed.';
+        }
         alert((currentLang === 'he' ? 'שגיאה בשמירה: ' : 'Save error: ') + errMsg);
     }
 }

@@ -399,8 +399,26 @@ input:focus, select:focus, textarea:focus {
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 800px;
+  min-width: 1180px;
 }
+.send-cell { font-size: 0.8rem; line-height: 1.35; display: flex; flex-direction: column; gap: 0.35rem; }
+.send-cell button { padding: 0.2rem 0.45rem; font-size: 0.72rem; }
+.send-ok { color: #15803d; }
+.send-wait { color: #a16207; }
+.bulk-strip {
+  display: none;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  background: #f5f0e6;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+}
+.bulk-strip.visible { display: flex; }
+.other-cat-inline { margin-top: 0.35rem; }
+.hidden { display: none !important; }
 th {
   text-align: right;
   padding: 0.9rem 1rem;
@@ -676,6 +694,25 @@ tr:hover td { background: #faf7f2; }
         <!-- populated by JS -->
       </div>
 
+      <div class="card" style="margin-bottom:1.5rem;">
+        <h2 class="serif">מועד סגירה לאישורי הגעה (גלובלי)</h2>
+        <p class="muted" style="margin-bottom:0.75rem;">המועד נשמר כשעון ישראל (Jerusalem). אורח שנסגר עבורו החלון ללא הגבלה — להארכה בשעות אפשר להשתמש ב״ארכת תגובה 12 ש׳״ מטבלת האורחים.</p>
+        <div class="form-row" style="align-items:flex-end;">
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <label for="deadline-enabled" style="margin:0;">סגירה פעילה</label>
+            <input type="checkbox" id="deadline-enabled" />
+          </div>
+          <div>
+            <label for="deadline-local">תאריך ושעה (מקומי במסך שלך)</label>
+            <input type="datetime-local" id="deadline-local" />
+          </div>
+          <div>
+            <button type="button" class="btn btn-primary" onclick="saveRsvpDeadlineFromUi()">שמור מועד</button>
+          </div>
+        </div>
+        <p class="muted" id="deadline-status-line" style="margin-top:0.75rem; font-size:0.85rem;"></p>
+      </div>
+
       <div class="charts-grid">
         <div class="chart-card chart-sm">
           <h3>פילוח סטטוס RSVP</h3>
@@ -698,9 +735,13 @@ tr:hover td { background: #faf7f2; }
       <div class="card" style="margin-bottom:1rem;">
         <h2 class="serif">📨 מרכז שליחת הזמנות</h2>
         <p class="muted" style="margin-bottom:1rem;">קודם מוסיפים את כל רשימת האורחים, ואז שולחים לכולם מהכפתור של הקמפיין. ליד כל אורח — WA או SMS נפתחים עם ההודעה והקישור האישי. <strong>וואטסאפ אינה תומכת בשליחה אמיתית לכל המספרים בלחיצה אחת</strong> מהדפדפן (חוסם טאבים / אין Broadcast). להמונים: ספק SMS עסקי (Twilio, 019, CELLACT וכו׳), או WhatsApp Business API.</p>
+        <label class="muted" style="display:flex; align-items:flex-start; gap:0.5rem; margin-bottom:1rem; cursor:pointer; max-width:52rem;">
+          <input type="checkbox" id="campaign-include-pending" style="margin-top:0.2rem;">
+          <span>בקמפיין <strong>שלח הזמנה</strong>: כלול גם אורחים במצב &quot;הוזמן · ממתין לתגובה&quot; (<code>pending</code>) — שליחה חוזרת. יוצג <strong>אישור גורף יחיד</strong> לפני תחילת המסע אם יש כאלה בתור.</span>
+        </label>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1rem;">
           <button class="btn btn-wa" onclick="startFreeCampaign('invite')">📣 שלח הזמנה לכל הרשימה</button>
-          <button class="btn btn-wa" onclick="startFreeCampaign('gift_reminder')">💛 התחל קמפיין חינמי (תזכורת מתנה)</button>
+          <button class="btn btn-wa" onclick="startFreeCampaign('gift_reminder')">💛 שלח תזכורת לכל הרשימה (3 ימים לפני האירוע)</button>
           <button class="btn btn-secondary" onclick="resumeFreeCampaign()">▶ המשך קמפיין</button>
           <button class="btn btn-secondary" onclick="exportFreeCampaignReport()">⬇ דוח קמפיין</button>
           <button class="btn btn-danger" onclick="clearFreeCampaign()">🧹 אפס קמפיין</button>
@@ -720,8 +761,8 @@ tr:hover td { background: #faf7f2; }
               <input type="text" id="g-name" required>
             </div>
             <div>
-              <label for="g-phone">טלפון</label>
-              <input type="tel" id="g-phone" placeholder="05X-XXXXXXX">
+              <label for="g-phone">טלפון נייד (חובה) *</label>
+              <input type="tel" id="g-phone" required placeholder="05XXXXXXXX">
             </div>
             <div>
               <label for="g-invite-side">צד הזמנה (קירבה) — קישור ביט באתר</label>
@@ -743,7 +784,9 @@ tr:hover td { background: #faf7f2; }
                 <option>צבא</option>
                 <option>עבודה</option>
                 <option>ילדים קטנים</option>
+                <option value="__other__">אחר (הקלדה חופשית)</option>
               </select>
+              <input type="text" id="g-category-other" class="other-cat-inline hidden" placeholder="פרט קטגוריה" />
             </div>
           </div>
           <button type="submit" class="btn btn-primary">+ הוסף אורח</button>
@@ -772,7 +815,8 @@ tr:hover td { background: #faf7f2; }
           </select>
           <select id="f-status">
             <option value="">כל הסטטוסים</option>
-            <option value="pending">⏳ לא ענה</option>
+            <option value="not_invited">📭 טרם נשלחה הזמנה</option>
+            <option value="pending">⏳ הוזמן — ממתין לתגובה</option>
             <option value="coming">✔️ מאשר</option>
             <option value="not_coming">❌ לא מגיע</option>
           </select>
@@ -781,16 +825,38 @@ tr:hover td { background: #faf7f2; }
             <option value="groom">צד חתן</option>
             <option value="bride">צד כלה</option>
           </select>
+          <select id="f-invite-sent" title="סטטוס שליחת הזמנה">
+            <option value="">הזמנה: הכל</option>
+            <option value="yes">הזמנה: נשלח</option>
+            <option value="no">הזמנה: לא נשלח</option>
+          </select>
+          <select id="f-reminder-sent" title="סטטוס תזכורת מתנה">
+            <option value="">תזכורת: הכל</option>
+            <option value="yes">תזכורת: נשלח</option>
+            <option value="no">תזכורת: לא נשלח</option>
+          </select>
+        </div>
+
+        <div id="bulkGuestStrip" class="bulk-strip">
+          <strong id="bulkGuestCount">0</strong>
+          <span class="muted">אורחים נבחרו · הזמנה:</span>
+          <button type="button" class="btn btn-secondary btn-icon" onclick="bulkSendStamp('invite', true)">נשלח</button>
+          <button type="button" class="btn btn-secondary btn-icon" onclick="bulkSendStamp('invite', false)">לא נשלח</button>
+          <span class="muted">· תזכורת:</span>
+          <button type="button" class="btn btn-secondary btn-icon" onclick="bulkSendStamp('gift', true)">נשלח</button>
+          <button type="button" class="btn btn-secondary btn-icon" onclick="bulkSendStamp('gift', false)">לא נשלח</button>
         </div>
 
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
+                <th style="width:2.5rem;" aria-hidden="true"></th>
                 <th>שם</th>
                 <th>טלפון</th>
                 <th>קירבה</th>
                 <th>קטגוריה</th>
+                <th>שליחות</th>
                 <th>כמות</th>
                 <th>סטטוס</th>
                 <th>פעולות</th>
@@ -887,6 +953,12 @@ let isAppVisible = false;
 let isRecoveryMode = false;
 let bulkSequentialState = null;
 const MAX_RSVP_GUESTS_ADMIN = 8;
+const CATEGORY_PRESETS = [
+  'חברים שלי', 'חברים שלה', 'משפחה שלי', 'משפחה שלה',
+  'חברי הורי החתן', 'חברי הורי הכלה', 'צבא', 'עבודה', 'ילדים קטנים'
+];
+const CATEGORY_OTHER = '__other__';
+
 let statusPieChart = null;
 let sidePieChart = null;
 let chartPluginsRegistered = false;
@@ -1034,6 +1106,7 @@ document.querySelectorAll('.tab').forEach(t => {
 // ═══════════════════════════════════════════════════════════════════
 async function refreshAll() {
   await Promise.all([loadGuests(), loadQuestions()]);
+  await hydrateRsvpDeadlineCard();
   renderOverview();
   renderGuests();
   renderQuestions();
@@ -1055,6 +1128,59 @@ async function loadQuestions() {
   if (pending > 0) { badge.textContent = pending; badge.style.display = 'inline-block'; }
   else badge.style.display = 'none';
 }
+
+async function hydrateRsvpDeadlineCard() {
+  const en = document.getElementById('deadline-enabled');
+  const loc = document.getElementById('deadline-local');
+  const line = document.getElementById('deadline-status-line');
+  if (!en || !loc || !line) return;
+  const { data, error } = await supa.from('event_settings').select('*').eq('id', 1).maybeSingle();
+  if (error && error.code !== 'PGRST116') {
+    line.textContent = 'לא ניתן לטעון הגדרות מועד: ' + error.message;
+    return;
+  }
+  const row = data || { rsvp_deadline_enabled: false, rsvp_deadline_at: null };
+  en.checked = !!row.rsvp_deadline_enabled;
+  if (row.rsvp_deadline_at) {
+    const d = new Date(row.rsvp_deadline_at);
+    loc.value = formatDateTimeLocalValue(d);
+  } else {
+    loc.value = '';
+  }
+  if (row.rsvp_deadline_enabled && row.rsvp_deadline_at) {
+    line.textContent = `מצב: פעיל · מועד (UTC בשרת): ${new Date(row.rsvp_deadline_at).toISOString()}`;
+  } else {
+    line.textContent = 'מצב: לא פעיל · אורחים לא נחסמים לפי מועד גלובלי';
+  }
+}
+
+function formatDateTimeLocalValue(d) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+async function saveRsvpDeadlineFromUi() {
+  const enabled = document.getElementById('deadline-enabled')?.checked ?? false;
+  const raw = document.getElementById('deadline-local')?.value?.trim() || '';
+  const p_deadline_local = enabled ? raw.replace('T', ' ').slice(0, 16) : null;
+  const { error } = await supa.rpc('admin_set_rsvp_deadline', {
+    p_enabled: enabled,
+    p_deadline_local
+  });
+  if (error) {
+    toast('שמירת מועד נכשלה: ' + error.message, 'error');
+    return;
+  }
+  toast('מועד RSVP עודכן', 'success');
+  await hydrateRsvpDeadlineCard();
+}
+
+document.getElementById('g-category')?.addEventListener('change', () => {
+  const sel = document.getElementById('g-category');
+  const o = document.getElementById('g-category-other');
+  if (!sel || !o) return;
+  o.classList.toggle('hidden', sel.value !== CATEGORY_OTHER);
+});
 
 // ═══════════════════════════════════════════════════════════════════
 // Guest "side" (קירבה) — ביט באתר + פילוח
@@ -1091,14 +1217,22 @@ function renderOverview() {
     .reduce((s, g) => s + (Number(g.guests_count) > 0 ? Number(g.guests_count) : 1), 0);
   const declined = allGuests.filter(g => g.rsvp_status === 'not_coming').length;
   const pending = allGuests.filter(g => g.rsvp_status === 'pending').length;
-  const responded = allGuests.length - pending;
-  const responseRate = allGuests.length ? Math.round(responded / allGuests.length * 100) : 0;
+  const notInvited = allGuests.filter(g => g.rsvp_status === 'not_invited').length;
+  const inviteStampYes = allGuests.filter(g => !!(g.initial_invite_sent_at && String(g.initial_invite_sent_at).trim())).length;
+  const inviteStampNo = total - inviteStampYes;
+  const responded = confirmed + declined;
+  const responseRate = total ? Math.round((responded / total) * 100) : 0;
 
   document.getElementById('statsGrid').innerHTML = `
     <div class="stat">
-      <div class="label">סה״כ מוזמנים</div>
+      <div class="label">סה״כ ברשימה</div>
       <div class="value">${total}</div>
-      <div class="sub">${allGuests.length} הזמנות נשלחו</div>
+      <div class="sub">${notInvited} טרם נשלחה להם הזמנה ראשונית</div>
+    </div>
+    <div class="stat">
+      <div class="label">חותמת שליחת הזמנה ראשונה</div>
+      <div class="value">${inviteStampYes}</div>
+      <div class="sub">${inviteStampNo} ללא תאריך בשדה נשלח</div>
     </div>
     <div class="stat confirmed">
       <div class="label">מאושרים</div>
@@ -1111,12 +1245,12 @@ function renderOverview() {
       <div class="sub">אישרו שלא יוכלו</div>
     </div>
     <div class="stat pending">
-      <div class="label">טרם ענו</div>
+      <div class="label">ממתינים לתגובה</div>
       <div class="value">${pending}</div>
-      <div class="sub">${responseRate}% שיעור תגובה</div>
+      <div class="sub">אחרי שליחת הזמנה · ${responseRate}% תגובה מסך הרשימה</div>
     </div>
   `;
-  renderOverviewCharts({ total, confirmed, declined, pending });
+  renderOverviewCharts({ total, confirmed, declined, pending, notInvited });
 }
 
 function destroyChartSafe(chart) {
@@ -1138,7 +1272,8 @@ function renderOverviewCharts() {
   const statusCounts = {
     confirmed: allGuests.filter(g => g.rsvp_status === 'coming').length,
     declined: allGuests.filter(g => g.rsvp_status === 'not_coming').length,
-    pending: allGuests.filter(g => g.rsvp_status === 'pending').length
+    pending: allGuests.filter(g => g.rsvp_status === 'pending').length,
+    notInvited: allGuests.filter(g => g.rsvp_status === 'not_invited').length
   };
   const statusTotal = allGuests.length;
   statusPieChart = new Chart(statusCtx, {
@@ -1147,11 +1282,17 @@ function renderOverviewCharts() {
       labels: [
         `מאשרים (${statusCounts.confirmed})`,
         `לא מגיעים (${statusCounts.declined})`,
-        `ממתינים (${statusCounts.pending})`
+        `הוזמנו · אין תגובה (${statusCounts.pending})`,
+        `טרם נשלחה הזמנה (${statusCounts.notInvited})`
       ],
       datasets: [{
-        data: [statusCounts.confirmed, statusCounts.declined, statusCounts.pending],
-        backgroundColor: ['#4a7c59', '#a84343', '#c4923a'],
+        data: [
+          statusCounts.confirmed,
+          statusCounts.declined,
+          statusCounts.pending,
+          statusCounts.notInvited
+        ],
+        backgroundColor: ['#4a7c59', '#a84343', '#c4923a', '#6b7280'],
         borderColor: '#ffffff',
         borderWidth: 2
       }]
@@ -1219,17 +1360,156 @@ function renderOverviewCharts() {
 // ═══════════════════════════════════════════════════════════════════
 // Guests table
 // ═══════════════════════════════════════════════════════════════════
+function formatSendStamp(ts) {
+  if (!ts) return '—';
+  try {
+    return new Date(ts).toLocaleString('he-IL');
+  } catch (_) {
+    return String(ts);
+  }
+}
+
+function sendStampWithIcon(ts) {
+  const ok = !!(ts && String(ts).trim().length > 1);
+  const icon = ok
+    ? '<span class="send-ok" title="סומן כנשלח">✅</span>'
+    : '<span class="send-wait" title="לא סומן">⏳</span>';
+  return `${icon} <strong>${formatSendStamp(ts)}</strong>`;
+}
+
+function sendFilterMatch(g, field, fv) {
+  if (!fv) return true;
+  const has = !!(g[field] && String(g[field]).length > 1);
+  if (fv === 'yes') return has;
+  if (fv === 'no') return !has;
+  return true;
+}
+
+function getResolvedCategoryFromDom(id) {
+  const sel = document.getElementById(`row-category-${id}`);
+  if (!sel) return '';
+  if (sel.value !== CATEGORY_OTHER) return (sel.value || '').trim();
+  return (document.getElementById(`row-cat-other-${id}`)?.value || '').trim();
+}
+
+function getSelectedGuestIds() {
+  return Array.from(document.querySelectorAll('.guest-row-cb:checked')).map(cb => cb.getAttribute('data-gid')).filter(Boolean);
+}
+
+function updateBulkGuestStrip() {
+  const ids = getSelectedGuestIds();
+  const strip = document.getElementById('bulkGuestStrip');
+  const cEl = document.getElementById('bulkGuestCount');
+  if (!strip || !cEl) return;
+  cEl.textContent = String(ids.length);
+  strip.classList.toggle('visible', ids.length > 0);
+}
+
+async function bulkSendStamp(kind, markSent) {
+  const ids = getSelectedGuestIds();
+  if (ids.length === 0) {
+    toast('לא נבחרו אורחים', 'error');
+    return;
+  }
+  const rpcKind = kind === 'gift' ? 'gift' : 'invite';
+  const label = kind === 'gift' ? 'תזכורת מתנה' : 'הזמנה ראשונית';
+  const action = markSent ? 'לסמן כ״נשלח״ (חותמת שרת כעת)' : 'לנקות את חותמת ה״נשלח״';
+  if (!confirm(`לעדכן ${ids.length} אורחים — ${label}: ${action}?`)) return;
+  const { data: n, error } = await supa.rpc('admin_bulk_patch_guest_send_status', {
+    p_guest_ids: ids,
+    p_kind: rpcKind,
+    p_mark_sent: markSent
+  });
+  if (error) {
+    toast('שגיאה: ' + error.message, 'error');
+    return;
+  }
+  const cnt = Number(n || 0);
+  toast(`עודכנו ${cnt}/${ids.length} שורות`, cnt === ids.length ? 'success' : 'error');
+  await refreshAll();
+}
+
+async function patchGuestSendField(guestId, kind, markSent) {
+  const rpcKind = kind === 'gift' ? 'gift' : 'invite';
+  const { error } = await supa.rpc('admin_patch_guest_send_status', {
+    p_guest_id: guestId,
+    p_kind: rpcKind,
+    p_mark_sent: markSent
+  });
+  if (error) {
+    toast('שגיאה: ' + error.message, 'error');
+    return;
+  }
+  toast('עודכן (חותמת שרת)', 'success');
+  await refreshAll();
+}
+
+async function regenerateGuestToken(guestId) {
+  if (!confirm('לחדש טוקן גישה? כל הקישורים וההזמנות עם הטוקן הישן יפסיקו לעבוד.')) return;
+  const { error } = await supa.rpc('admin_regenerate_guest_token', { p_guest_id: guestId });
+  if (error) {
+    toast('שגיאה: ' + error.message, 'error');
+    return;
+  }
+  toast('הטוקן חודש', 'success');
+  await loadGuests();
+  if (confirm('לפתוח קישור אישי / הודעת וואטסאפ עם הטוקן החדש?')) showLink(guestId);
+}
+
+async function grantRsvpOverrideForGuest(id) {
+  if (!confirm('לתת לאורח חלון של 12 שעות נוסף לעדכן RSVP לאחר סגירה גלובלית?')) return;
+  const { error } = await supa.rpc('admin_grant_rsvp_override', { p_guest_id: id });
+  if (error) {
+    toast('שגיאה: ' + error.message, 'error');
+    return;
+  }
+  toast('נוסף חלון 12 שעות לאורח', 'success');
+  await refreshAll();
+}
+
+function rowCategoryMarkup(g) {
+  const presets = CATEGORY_PRESETS;
+  const inPreset = presets.includes(g.category);
+  const opts = presets.map((c) =>
+    `<option value="${escapeHtml(c)}" ${g.category === c ? 'selected' : ''}>${escapeHtml(c)}</option>`
+  ).join('');
+  const otherSel = (!inPreset && g.category) ? 'selected' : '';
+  return `
+        <select id="row-category-${g.id}" class="form-input" data-gid="${g.id}" onchange="toggleRowCategoryOther('${g.id}')">
+          ${opts}
+          <option value="${CATEGORY_OTHER}" ${otherSel}>אחר (הקלדה חופשית)</option>
+        </select>
+        <input id="row-cat-other-${g.id}" class="form-input other-cat-inline" style="${inPreset ? 'display:none' : ''};margin-top:0.35rem;"
+          placeholder="קטגוריה מותאמת" value="${inPreset ? '' : escapeHtml(g.category || '')}" />
+      `;
+}
+
+function toggleRowCategoryOther(id) {
+  const sel = document.getElementById(`row-category-${id}`);
+  const o = document.getElementById(`row-cat-other-${id}`);
+  if (!sel || !o) return;
+  const show = sel.value === CATEGORY_OTHER;
+  o.style.display = show ? 'block' : 'none';
+  if (!show) o.value = '';
+}
+
+window.toggleRowCategoryOther = toggleRowCategoryOther;
+
 function renderGuests() {
   const search = document.getElementById('f-search').value.toLowerCase();
   const catF = document.getElementById('f-category').value;
   const statF = document.getElementById('f-status').value;
   const sideF = document.getElementById('f-side').value;
+  const invF = document.getElementById('f-invite-sent')?.value || '';
+  const remF = document.getElementById('f-reminder-sent')?.value || '';
 
   let filtered = allGuests.filter(g => {
     if (catF && g.category !== catF) return false;
     if (statF && g.rsvp_status !== statF) return false;
     if (sideF && guestSideRaw(g) !== sideF) return false;
     if (search && !g.full_name.toLowerCase().includes(search) && !(g.phone || '').includes(search)) return false;
+    if (!sendFilterMatch(g, 'initial_invite_sent_at', invF)) return false;
+    if (!sendFilterMatch(g, 'gift_reminder_sent_at', remF)) return false;
     return true;
   });
 
@@ -1237,15 +1517,11 @@ function renderGuests() {
 
   const tbody = document.getElementById('guestsTable');
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:2rem;" class="muted">אין תוצאות</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:2rem;" class="muted">אין תוצאות</td></tr>`;
+    updateBulkGuestStrip();
     return;
   }
 
-  const statusLabels = { coming: '✔️ מאשר', not_coming: '❌ לא מגיע', pending: '⏳ לא ענה' };
-  const categoryOptions = [
-    'חברים שלי','חברים שלה','משפחה שלי','משפחה שלה',
-    'חברי הורי החתן','חברי הורי הכלה','צבא','עבודה','ילדים קטנים'
-  ];
   tbody.innerHTML = filtered.map(g => {
     const contacted = isContacted(g.id);
     const countValue = Math.max(0, Math.min(MAX_RSVP_GUESTS_ADMIN, Number(g.guests_count) || 0));
@@ -1253,11 +1529,14 @@ function renderGuests() {
     return `
     <tr class="${contacted ? 'row-contacted' : ''}">
       <td>
+        <input type="checkbox" class="guest-row-cb" data-gid="${g.id}" onclick="updateBulkGuestStrip()" />
+      </td>
+      <td>
         ${contacted ? '<span class="contact-check">✓</span>' : ''}
         <input id="row-name-${g.id}" class="form-input" value="${escapeHtml(g.full_name)}" />
       </td>
       <td>
-        <input id="row-phone-${g.id}" class="form-input" value="${escapeHtml(g.phone || '')}" placeholder="05X..." />
+        <input id="row-phone-${g.id}" class="form-input" value="${escapeHtml(g.phone || '')}" placeholder="05XXXXXXXX" dir="ltr" />
       </td>
       <td>
         <select id="row-side-${g.id}" class="form-input">
@@ -1266,16 +1545,27 @@ function renderGuests() {
         </select>
       </td>
       <td>
-        <select id="row-category-${g.id}" class="form-input">
-          ${categoryOptions.map(c => `<option ${g.category === c ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}
-        </select>
+        ${rowCategoryMarkup(g)}
+      </td>
+      <td>
+        <div class="send-cell">
+          <div>הזמנה: ${sendStampWithIcon(g.initial_invite_sent_at)}
+            <button type="button" class="btn btn-secondary btn-icon" onclick="patchGuestSendField('${g.id}','invite',true)">נשלח</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="patchGuestSendField('${g.id}','invite',false)">לא</button>
+          </div>
+          <div>תזכורת: ${sendStampWithIcon(g.gift_reminder_sent_at)}
+            <button type="button" class="btn btn-secondary btn-icon" onclick="patchGuestSendField('${g.id}','gift',true)">נשלח</button>
+            <button type="button" class="btn btn-secondary btn-icon" onclick="patchGuestSendField('${g.id}','gift',false)">לא</button>
+          </div>
+        </div>
       </td>
       <td>
         <input id="row-count-${g.id}" class="form-input" type="number" min="0" max="${MAX_RSVP_GUESTS_ADMIN}" value="${countValue}" />
       </td>
       <td>
         <select id="row-status-${g.id}" class="form-input">
-          <option value="pending" ${g.rsvp_status === 'pending' ? 'selected' : ''}>⏳ לא ענה</option>
+          <option value="not_invited" ${g.rsvp_status === 'not_invited' ? 'selected' : ''}>📭 טרם נשלחה הזמנה</option>
+          <option value="pending" ${g.rsvp_status === 'pending' ? 'selected' : ''}>⏳ הוזמן · ממתין לתגובה</option>
           <option value="coming" ${g.rsvp_status === 'coming' ? 'selected' : ''}>✔️ מאשר</option>
           <option value="not_coming" ${g.rsvp_status === 'not_coming' ? 'selected' : ''}>❌ לא מגיע</option>
         </select>
@@ -1283,17 +1573,21 @@ function renderGuests() {
       <td>
         <div class="row-actions">
           <button class="btn btn-primary btn-icon" onclick="saveGuestRow('${g.id}')" title="שמור">💾</button>
+          <button class="btn btn-secondary btn-icon" onclick="grantRsvpOverrideForGuest('${g.id}')" title="ארכת תגובה 12 ש׳ לאחר סגירה גלובלית">🕐</button>
           <button class="btn btn-wa btn-icon" onclick="sendWhatsApp('${g.id}')" title="שלח בוואטסאפ">💬 WA</button>
           <button class="btn btn-sms btn-icon" onclick="sendSMS('${g.id}')" title="שלח SMS">📱 SMS</button>
           <button class="btn btn-secondary btn-icon" onclick="showLink('${g.id}')">🔗</button>
+          <button class="btn btn-secondary btn-icon" onclick="regenerateGuestToken('${g.id}')" title="חידוש טוקן קישור">🔁</button>
           <button class="btn btn-danger btn-icon" onclick="deleteGuest('${g.id}')">🗑</button>
         </div>
       </td>
     </tr>
   `;}).join('');
+
+  updateBulkGuestStrip();
 }
 
-['f-search', 'f-category', 'f-status', 'f-side'].forEach(id => {
+['f-search', 'f-category', 'f-status', 'f-side', 'f-invite-sent', 'f-reminder-sent'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => { renderGuests(); updateContactProgress(); });
 });
@@ -1307,12 +1601,30 @@ window.renderGuests = function() { originalRender(); updateContactProgress(); };
 // ═══════════════════════════════════════════════════════════════════
 document.getElementById('addGuestForm').addEventListener('submit', async (e) => {
   e.preventDefault();
+  const catSel = document.getElementById('g-category');
+  let category = (catSel?.value || '').trim();
+  if (category === CATEGORY_OTHER) {
+    category = (document.getElementById('g-category-other')?.value || '').trim();
+  }
+  const phoneRaw = document.getElementById('g-phone').value.trim();
+  if (!phoneRaw) {
+    toast('מספר טלפון נייד הוא חובה', 'error');
+    return;
+  }
+  if (!isValidIsraelMobile(phoneRaw)) {
+    toast('מספר טלפון לא מזוהה כנייד ישראלי תקין (05XXXXXXXX או 9725...)', 'error');
+    return;
+  }
+  if (!category) {
+    toast('יש לבחור או למלא קטגוריה', 'error');
+    return;
+  }
   const payload = {
     full_name: document.getElementById('g-name').value.trim(),
-    phone: document.getElementById('g-phone').value.trim() || null,
+    phone: phoneRaw || null,
     invite_side: document.getElementById('g-invite-side').value === 'bride' ? 'bride' : 'groom',
-    category: document.getElementById('g-category').value,
-    rsvp_status: 'pending',
+    category,
+    rsvp_status: 'not_invited',
     guests_count: 0,
     responded_at: null
   };
@@ -1320,6 +1632,7 @@ document.getElementById('addGuestForm').addEventListener('submit', async (e) => 
   if (error) { toast('שגיאה: ' + error.message, 'error'); return; }
   toast('אורח נוסף בהצלחה', 'success');
   e.target.reset();
+  document.getElementById('g-category-other')?.classList.add('hidden');
   refreshAll();
 });
 
@@ -1343,16 +1656,26 @@ async function toggleGuestInviteSide(id) {
 }
 
 async function saveGuestRow(id) {
-  const status = document.getElementById(`row-status-${id}`)?.value || 'pending';
+  const status = document.getElementById(`row-status-${id}`)?.value || 'not_invited';
   let guestsCount = parseInt(document.getElementById(`row-count-${id}`)?.value, 10);
   if (!Number.isFinite(guestsCount)) guestsCount = status === 'coming' ? 1 : 0;
   if (status === 'coming') guestsCount = Math.max(1, Math.min(MAX_RSVP_GUESTS_ADMIN, guestsCount));
   else guestsCount = 0;
+  const resolvedCat = getResolvedCategoryFromDom(id);
+  const phoneRaw = (document.getElementById(`row-phone-${id}`)?.value || '').trim();
+  if (!phoneRaw) {
+    toast('מספר טלפון נייד הוא חובה', 'error');
+    return;
+  }
+  if (!isValidIsraelMobile(phoneRaw)) {
+    toast('מספר טלפון לא מזוהה כנייד ישראלי תקין', 'error');
+    return;
+  }
   const payload = {
     full_name: (document.getElementById(`row-name-${id}`)?.value || '').trim(),
-    phone: (document.getElementById(`row-phone-${id}`)?.value || '').trim() || null,
+    phone: phoneRaw || null,
     invite_side: document.getElementById(`row-side-${id}`)?.value === 'bride' ? 'bride' : 'groom',
-    category: (document.getElementById(`row-category-${id}`)?.value || '').trim(),
+    category: resolvedCat,
     rsvp_status: status,
     guests_count: guestsCount
   };
@@ -1364,7 +1687,8 @@ async function saveGuestRow(id) {
     toast('קטגוריה חובה', 'error');
     return;
   }
-  if (status !== 'pending') payload.responded_at = new Date().toISOString();
+  if (status === 'coming' || status === 'not_coming') payload.responded_at = new Date().toISOString();
+  else payload.responded_at = null;
   const { error } = await supa.from('guests').update(payload).eq('id', id);
   if (error) { toast('שגיאה: ' + error.message, 'error'); return; }
   toast('נשמר', 'success');
@@ -1471,9 +1795,14 @@ function normalizeSide(cell) {
   return 'groom';
 }
 
-function looksLikeIsraeliPhone(cell) {
+function isValidIsraelMobile(cell) {
   const d = String(cell || '').replace(/\D/g, '');
-  return d.length >= 9 && d.length <= 13;
+  return /^05[0-9]{8}$/.test(d) || /^9725[0-9]{8}$/.test(d);
+}
+
+/** loose match for CSV column detection — still accepts broader patterns */
+function looksLikeIsraeliPhone(cell) {
+  return isValidIsraelMobile(cell);
 }
 
 function columnMapFromHeader(row) {
@@ -1606,14 +1935,19 @@ function exportCSV(type) {
     ]);
     filename = `shealot-${exportBasenameStem()}.csv`;
   } else {
-    const statusLabels = { coming: '✔️ מאשר', not_coming: '❌ לא מגיע', pending: '⏳ לא ענה' };
+    const statusLabels = {
+      coming: '✔️ מאשר',
+      not_coming: '❌ לא מגיע',
+      pending: '⏳ הוזמן · ממתין לתגובה',
+      not_invited: '📭 טרם נשלחה הזמנה'
+    };
     let data = allGuests;
     if (type === 'coming') data = data.filter(g => g.rsvp_status === 'coming');
     header = ['שם', 'טלפון', 'קירבה', 'קטגוריה', 'כמות', 'סטטוס', 'הערות'];
     rows = data.map(g => [
       g.full_name, g.phone || '', sideLabelHeGuest(g), g.category,
       g.rsvp_status === 'coming' ? (Number(g.guests_count) > 0 ? Number(g.guests_count) : 1) : 0,
-      statusLabels[g.rsvp_status], g.notes || ''
+      statusLabels[g.rsvp_status] || g.rsvp_status, g.notes || ''
     ]);
     filename = type === 'coming'
       ? `orcahim-meusharim-${exportBasenameStem()}.csv`
@@ -1726,31 +2060,129 @@ async function getCurrentUserId() {
   return data.user.id;
 }
 
+function countInviteCampaignBreakdown(queueIds) {
+  let notInvited = 0;
+  let pending = 0;
+  for (const id of queueIds) {
+    const g = allGuests.find(x => x.id === id);
+    if (!g) continue;
+    if (g.rsvp_status === 'not_invited') notInvited++;
+    else if (g.rsvp_status === 'pending') pending++;
+  }
+  return { notInvited, pending };
+}
+
+function passesCampaignCatSide(g, catF, sideF) {
+  if (catF && g.category !== catF) return false;
+  if (sideF && guestSideRaw(g) !== sideF) return false;
+  return true;
+}
+
+function passesCampaignRsvpRules(g, mode, includePending) {
+  if (mode === 'invite') {
+    if (g.rsvp_status === 'coming' || g.rsvp_status === 'not_coming') return false;
+    if (g.rsvp_status === 'pending') return includePending;
+    if (g.rsvp_status === 'not_invited') return true;
+    return false;
+  }
+  if (mode === 'gift_reminder') return g.rsvp_status === 'coming';
+  return false;
+}
+
+function passesCampaignWaPhone(g) {
+  return !!(g.phone && isValidIsraelMobile(g.phone) && formatPhoneIntl(g.phone));
+}
+
 function buildFreeCampaignQueue(mode) {
   const catF = document.getElementById('f-category').value || '';
   const sideF = document.getElementById('f-side').value || '';
   const onlyConfirmed = mode === 'gift_reminder';
-  const queue = allGuests.filter(g => {
-    if (!g.phone || !formatPhoneIntl(g.phone)) return false;
-    if (catF && g.category !== catF) return false;
-    if (sideF && guestSideRaw(g) !== sideF) return false;
-    if (onlyConfirmed && g.rsvp_status !== 'coming') return false;
-    return true;
-  }).map(g => g.id);
-  return { queue, catF, sideF, onlyConfirmed };
+  const inviteMode = mode === 'invite';
+  const includePending =
+    inviteMode && !!document.getElementById('campaign-include-pending')?.checked;
+
+  const inScope = allGuests.filter(g => passesCampaignCatSide(g, catF, sideF));
+  const inRules = inScope.filter(g => passesCampaignRsvpRules(g, mode, includePending));
+  const queue = inRules.filter(g => passesCampaignWaPhone(g)).map(g => g.id);
+  const blockedNoPhone = Math.max(0, inRules.length - queue.length);
+
+  return {
+    queue,
+    catF,
+    sideF,
+    onlyConfirmed,
+    includePending,
+    meta: {
+      scopeCount: inScope.length,
+      inRulesCount: inRules.length,
+      blockedNoPhone
+    }
+  };
+}
+
+function collectCampaignInvalidGuests(queue) {
+  const out = [];
+  for (const id of queue) {
+    const g = allGuests.find(x => x.id === id);
+    if (!g) continue;
+    const reasons = [];
+    if (!g.full_name || String(g.full_name).trim().length < 2) reasons.push('שם');
+    if (!g.category || !String(g.category).trim()) reasons.push('קטגוריה');
+    if (!isValidIsraelMobile(g.phone)) reasons.push('טלפון נייד');
+    if (!formatPhoneIntl(g.phone)) reasons.push('WA');
+    if (reasons.length) out.push({ g, reasons });
+  }
+  return out;
 }
 
 async function startFreeCampaign(mode = 'invite') {
-  const { queue, catF, sideF, onlyConfirmed } = buildFreeCampaignQueue(mode);
+  const { queue, catF, sideF, onlyConfirmed, meta } = buildFreeCampaignQueue(mode);
   if (queue.length === 0) {
     toast('אין אורחים מתאימים לקמפיין לפי המסננים', 'error');
     return;
   }
+  if (mode === 'gift_reminder') {
+    const { count, error } = await supa
+      .from('message_campaigns')
+      .select('id', { count: 'exact', head: true })
+      .eq('mode', 'gift_reminder')
+      .eq('dry_run', false);
+    const prior = !error && Number(count || 0) > 0;
+    if (prior) {
+      const okExtra = confirm(
+        'כבר רצה בעבר קמפיין „תזכורת מתנה”. להמשיך עם קמפיין נוסף (שליחה חוזרת לאותה קהילה המסוננת)?'
+      );
+      if (!okExtra) return;
+    }
+  }
+  const invalid = collectCampaignInvalidGuests(queue);
+  if (invalid.length > 0) {
+    const lines = invalid.slice(0, 25).map(x => `• ${x.g.full_name}: ${x.reasons.join(', ')}`);
+    const more = invalid.length > 25 ? `\n...ועוד ${invalid.length - 25}` : '';
+    alert(`לא ניתן להתחיל — ${invalid.length} שורות חסרות פרט חובה:\n\n${lines.join('\n')}${more}`);
+    return;
+  }
   const label = mode === 'gift_reminder' ? 'תזכורת מתנה' : 'הזמנה';
-  const ok = confirm(
-    `להתחיל קמפיין "${label}" ל-${queue.length} אורחים?\n` +
-    `קטגוריה: ${catF || 'הכל'} | צד: ${sideF || 'הכל'}`
-  );
+  const parts = [
+    `להתחיל קמפיין "${label}" ל-${queue.length} אורחים?`,
+    `קטגוריה: ${catF || 'הכל'} | צד: ${sideF || 'הכל'}`,
+    `במסגרת הסינון (קטגוריה/צד): ${meta.scopeCount} | מתאימים לכללי הקמפיין: ${meta.inRulesCount} | כשירים ל-WA בתור: ${queue.length}`
+  ];
+  if (meta.blockedNoPhone > 0) {
+    parts.push(`לא נכנסו לתור בשל טלפון/WA לא תקין (ביחס למתאימים לכללי הקמפיין): ${meta.blockedNoPhone}`);
+  }
+  if (mode === 'invite') {
+    const { notInvited, pending } = countInviteCampaignBreakdown(queue);
+    parts.push(`פירוט לפי RSVP: טרם נשלחה הזמנה — ${notInvited} | ממתינים לתגובה (pending) — ${pending}`);
+    if (pending > 0) {
+      parts.push('');
+      parts.push('המסע כולל שליחה חוזרת למי שכבר קיבלו הזמנה ראשונית.');
+      parts.push('לחיצה על "אישור" מהווה אישור גורף יחיד לכל המסע.');
+    }
+  } else if (onlyConfirmed) {
+    parts.push('(רק מאשרי הגעה)');
+  }
+  const ok = confirm(parts.join('\n'));
   if (!ok) return;
 
   const userId = await getCurrentUserId();
@@ -1901,6 +2333,35 @@ async function markFreeCampaignCurrent(result) {
     toast('אין פריט בתור לעדכון', 'error');
     return;
   }
+
+  if (result === 'sent') {
+    const { data: modeRows } = await supa.from('message_campaigns').select('mode').eq('id', camp.id).limit(1);
+    const isInviteCampaign = modeRows?.[0]?.mode === 'invite';
+    const rpcKind = isInviteCampaign ? 'invite' : 'gift';
+    const { error: rpcErr } = await supa.rpc('admin_patch_guest_send_status', {
+      p_guest_id: item.guest_id,
+      p_kind: rpcKind,
+      p_mark_sent: true
+    });
+    if (rpcErr) {
+      toast('שגיאה בעדכון חותמת שליחה בשרת: ' + rpcErr.message, 'error');
+      console.error(rpcErr);
+      await renderFreeCampaignStatus();
+      return;
+    }
+
+    if (isInviteCampaign) {
+      await supa
+        .from('guests')
+        .update({ rsvp_status: 'pending' })
+        .eq('id', item.guest_id)
+        .eq('rsvp_status', 'not_invited');
+    }
+    await loadGuests();
+    renderOverview();
+    if (typeof window.renderGuests === 'function') window.renderGuests();
+  }
+
   const { error: itemErr } = await supa
     .from('message_campaign_items')
     .update({ status: result === 'sent' ? 'sent' : 'failed' })
