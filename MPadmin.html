@@ -678,9 +678,9 @@ tr:hover td { background: #faf7f2; }
 
       <div class="charts-grid">
         <div class="chart-card chart-sm">
-          <h3>פילוח לפי קטגוריה</h3>
+          <h3>פילוח סטטוס RSVP</h3>
           <div class="chart-canvas-wrap">
-            <canvas id="categoryPieChart"></canvas>
+            <canvas id="statusPieChart"></canvas>
           </div>
         </div>
         <div class="chart-card chart-sm">
@@ -689,17 +689,6 @@ tr:hover td { background: #faf7f2; }
             <canvas id="sidePieChart"></canvas>
           </div>
         </div>
-      </div>
-
-      <div class="card">
-        <h2 class="serif">פילוח לפי קטגוריה</h2>
-        <div class="category-grid" id="categoryGrid"></div>
-      </div>
-
-      <div class="card">
-        <h2 class="serif">פילוח לפי צד הזמנה (קירבה)</h2>
-        <p class="muted" style="margin-bottom:1rem;">מבוסס על עמודת <strong>קירבה</strong> בייבוא: צד חתן או צד כלה — משפיע על קישור הביט באתר לאורח.</p>
-        <div class="category-grid" id="sideGrid"></div>
       </div>
     </div>
 
@@ -906,7 +895,7 @@ let isAppVisible = false;
 let isRecoveryMode = false;
 let bulkSequentialState = null;
 const MAX_RSVP_GUESTS_ADMIN = 8;
-let categoryPieChart = null;
+let statusPieChart = null;
 let sidePieChart = null;
 let chartPluginsRegistered = false;
 
@@ -1136,81 +1125,6 @@ function renderOverview() {
     </div>
   `;
   renderOverviewCharts({ total, confirmed, declined, pending });
-
-  // Categories
-  const cats = {};
-  allGuests.forEach(g => {
-    if (!cats[g.category]) cats[g.category] = { total: 0, c: 0, d: 0, p: 0 };
-    cats[g.category].total += 1;
-    if (g.rsvp_status === 'coming') cats[g.category].c++;
-    else if (g.rsvp_status === 'not_coming') cats[g.category].d++;
-    else cats[g.category].p++;
-  });
-
-  const catGrid = document.getElementById('categoryGrid');
-  if (Object.keys(cats).length === 0) {
-    catGrid.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>עדיין לא נוספו אורחים</div>';
-  } else {
-  catGrid.innerHTML = Object.entries(cats).map(([name, s]) => {
-    const cP = s.total ? s.c / s.total * 100 : 0;
-    const dP = s.total ? s.d / s.total * 100 : 0;
-    const pP = s.total ? s.p / s.total * 100 : 0;
-    return `
-      <div class="cat-card">
-        <h4>${escapeHtml(name)} <span class="total">${s.total}</span></h4>
-        <div class="cat-stats">
-          <span>✓ <span class="c">${s.c}</span></span>
-          <span>✗ <span class="d">${s.d}</span></span>
-          <span>⏱ <span class="p">${s.p}</span></span>
-        </div>
-        <div class="progress-bar">
-          <div class="seg c" style="width:${cP}%"></div>
-          <div class="seg d" style="width:${dP}%"></div>
-          <div class="seg p" style="width:${pP}%"></div>
-        </div>
-      </div>
-    `;
-  }).join('');
-  }
-
-  // Side breakdown (קירבה — ביט באתר)
-  const sides = {};
-  const sideLabel = (k) => (k === 'bride' ? 'צד כלה' : 'צד חתן');
-  allGuests.forEach(g => {
-    const k = guestSideRaw(g);
-    if (!sides[k]) sides[k] = { total: 0, c: 0, d: 0, p: 0 };
-    sides[k].total += 1;
-    if (g.rsvp_status === 'coming') sides[k].c++;
-    else if (g.rsvp_status === 'not_coming') sides[k].d++;
-    else sides[k].p++;
-  });
-  const sideGridEl = document.getElementById('sideGrid');
-  if (!sideGridEl) return;
-  const keys = ['groom', 'bride'].filter(k => sides[k]);
-  if (keys.length === 0) {
-    sideGridEl.innerHTML = '<div class="empty"><div class="empty-icon">⚖️</div>עדיין אין נתוני צד</div>';
-  } else {
-    sideGridEl.innerHTML = keys.map(k => {
-      const s = sides[k];
-      const cP = s.total ? s.c / s.total * 100 : 0;
-      const dP = s.total ? s.d / s.total * 100 : 0;
-      const pP = s.total ? s.p / s.total * 100 : 0;
-      return `
-      <div class="cat-card">
-        <h4>${sideLabel(k)} <span class="total">${s.total}</span></h4>
-        <div class="cat-stats">
-          <span>✓ <span class="c">${s.c}</span></span>
-          <span>✗ <span class="d">${s.d}</span></span>
-          <span>⏱ <span class="p">${s.p}</span></span>
-        </div>
-        <div class="progress-bar">
-          <div class="seg c" style="width:${cP}%"></div>
-          <div class="seg d" style="width:${dP}%"></div>
-          <div class="seg p" style="width:${pP}%"></div>
-        </div>
-      </div>`;
-    }).join('');
-  }
 }
 
 function destroyChartSafe(chart) {
@@ -1218,35 +1132,34 @@ function destroyChartSafe(chart) {
 }
 
 function renderOverviewCharts() {
-  const categoryCtx = document.getElementById('categoryPieChart');
+  const statusCtx = document.getElementById('statusPieChart');
   const sideCtx = document.getElementById('sidePieChart');
-  if (!categoryCtx || !sideCtx || typeof Chart === 'undefined') return;
+  if (!statusCtx || !sideCtx || typeof Chart === 'undefined') return;
 
   if (!chartPluginsRegistered && typeof ChartDataLabels !== 'undefined') {
     Chart.register(ChartDataLabels);
     chartPluginsRegistered = true;
   }
 
-  destroyChartSafe(categoryPieChart);
+  destroyChartSafe(statusPieChart);
   destroyChartSafe(sidePieChart);
-  const categoryCounts = {};
-  allGuests.forEach(g => {
-    const k = (g.category || 'ללא קטגוריה').trim() || 'ללא קטגוריה';
-    categoryCounts[k] = (categoryCounts[k] || 0) + 1;
-  });
-  const catEntries = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]);
-  const top = catEntries.slice(0, 7);
-  const rest = catEntries.slice(7).reduce((s, [, v]) => s + v, 0);
-  if (rest > 0) top.push(['אחרים', rest]);
-  const catTotal = top.reduce((s, [, v]) => s + v, 0);
-  const categoryColors = ['#8b6f47','#d4bc94','#6b5335','#c4923a','#4a7c59','#bca078','#9b825f','#7c6a50'];
-  categoryPieChart = new Chart(categoryCtx, {
+  const statusCounts = {
+    confirmed: allGuests.filter(g => g.rsvp_status === 'coming').length,
+    declined: allGuests.filter(g => g.rsvp_status === 'not_coming').length,
+    pending: allGuests.filter(g => g.rsvp_status === 'pending').length
+  };
+  const statusTotal = allGuests.length;
+  statusPieChart = new Chart(statusCtx, {
     type: 'doughnut',
     data: {
-      labels: top.map(([name, v]) => `${name} (${v})`),
+      labels: [
+        `מאשרים (${statusCounts.confirmed})`,
+        `לא מגיעים (${statusCounts.declined})`,
+        `ממתינים (${statusCounts.pending})`
+      ],
       datasets: [{
-        data: top.map(([, v]) => v),
-        backgroundColor: top.map((_, i) => categoryColors[i % categoryColors.length]),
+        data: [statusCounts.confirmed, statusCounts.declined, statusCounts.pending],
+        backgroundColor: ['#4a7c59', '#a84343', '#c4923a'],
         borderColor: '#ffffff',
         borderWidth: 2
       }]
@@ -1257,11 +1170,20 @@ function renderOverviewCharts() {
       cutout: '55%',
       plugins: {
         legend: { position: 'bottom' },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const value = Number(ctx.raw || 0);
+              const pct = statusTotal ? Math.round((value / statusTotal) * 100) : 0;
+              return `${ctx.label}: ${value} (${pct}%)`;
+            }
+          }
+        },
         datalabels: {
           color: '#fff',
           font: { weight: '700', size: 11 },
           formatter: (value) => {
-            const pct = catTotal ? Math.round((value / catTotal) * 100) : 0;
+            const pct = statusTotal ? Math.round((value / statusTotal) * 100) : 0;
             return `${value}\n${pct}%`;
           }
         }
