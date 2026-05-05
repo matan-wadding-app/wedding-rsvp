@@ -28,6 +28,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Assistant:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 <script src="./config.js"></script>
 <style>
 :root {
@@ -677,9 +678,9 @@ tr:hover td { background: #faf7f2; }
 
       <div class="charts-grid">
         <div class="chart-card chart-sm">
-          <h3>התפלגות סטטוס RSVP</h3>
+          <h3>פילוח לפי קטגוריה</h3>
           <div class="chart-canvas-wrap">
-            <canvas id="statusPieChart"></canvas>
+            <canvas id="categoryPieChart"></canvas>
           </div>
         </div>
         <div class="chart-card chart-sm">
@@ -905,8 +906,9 @@ let isAppVisible = false;
 let isRecoveryMode = false;
 let bulkSequentialState = null;
 const MAX_RSVP_GUESTS_ADMIN = 8;
-let statusPieChart = null;
+let categoryPieChart = null;
 let sidePieChart = null;
+let chartPluginsRegistered = false;
 
 // ═══════════════════════════════════════════════════════════════════
 // Auth (Supabase email/password)
@@ -1215,21 +1217,36 @@ function destroyChartSafe(chart) {
   if (chart && typeof chart.destroy === 'function') chart.destroy();
 }
 
-function renderOverviewCharts({ confirmed, declined, pending }) {
-  const statusCtx = document.getElementById('statusPieChart');
+function renderOverviewCharts() {
+  const categoryCtx = document.getElementById('categoryPieChart');
   const sideCtx = document.getElementById('sidePieChart');
-  if (!statusCtx || !sideCtx || typeof Chart === 'undefined') return;
+  if (!categoryCtx || !sideCtx || typeof Chart === 'undefined') return;
 
-  destroyChartSafe(statusPieChart);
+  if (!chartPluginsRegistered && typeof ChartDataLabels !== 'undefined') {
+    Chart.register(ChartDataLabels);
+    chartPluginsRegistered = true;
+  }
+
+  destroyChartSafe(categoryPieChart);
   destroyChartSafe(sidePieChart);
-
-  statusPieChart = new Chart(statusCtx, {
-    type: 'pie',
+  const categoryCounts = {};
+  allGuests.forEach(g => {
+    const k = (g.category || 'ללא קטגוריה').trim() || 'ללא קטגוריה';
+    categoryCounts[k] = (categoryCounts[k] || 0) + 1;
+  });
+  const catEntries = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]);
+  const top = catEntries.slice(0, 7);
+  const rest = catEntries.slice(7).reduce((s, [, v]) => s + v, 0);
+  if (rest > 0) top.push(['אחרים', rest]);
+  const catTotal = top.reduce((s, [, v]) => s + v, 0);
+  const categoryColors = ['#8b6f47','#d4bc94','#6b5335','#c4923a','#4a7c59','#bca078','#9b825f','#7c6a50'];
+  categoryPieChart = new Chart(categoryCtx, {
+    type: 'doughnut',
     data: {
-      labels: ['מאשרים', 'לא מגיעים', 'ממתינים'],
+      labels: top.map(([name, v]) => `${name} (${v})`),
       datasets: [{
-        data: [confirmed, declined, pending],
-        backgroundColor: ['#4a7c59', '#a84343', '#c4923a'],
+        data: top.map(([, v]) => v),
+        backgroundColor: top.map((_, i) => categoryColors[i % categoryColors.length]),
         borderColor: '#ffffff',
         borderWidth: 2
       }]
@@ -1237,16 +1254,28 @@ function renderOverviewCharts({ confirmed, declined, pending }) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } }
+      cutout: '55%',
+      plugins: {
+        legend: { position: 'bottom' },
+        datalabels: {
+          color: '#fff',
+          font: { weight: '700', size: 11 },
+          formatter: (value) => {
+            const pct = catTotal ? Math.round((value / catTotal) * 100) : 0;
+            return `${value}\n${pct}%`;
+          }
+        }
+      }
     }
   });
 
   const groomCount = allGuests.filter(g => guestSideRaw(g) === 'groom').length;
   const brideCount = allGuests.filter(g => guestSideRaw(g) === 'bride').length;
+  const sideTotal = groomCount + brideCount;
   sidePieChart = new Chart(sideCtx, {
     type: 'doughnut',
     data: {
-      labels: ['צד חתן', 'צד כלה'],
+      labels: [`צד חתן (${groomCount})`, `צד כלה (${brideCount})`],
       datasets: [{
         data: [groomCount, brideCount],
         backgroundColor: ['#8b6f47', '#d4bc94'],
@@ -1257,7 +1286,18 @@ function renderOverviewCharts({ confirmed, declined, pending }) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } }
+      cutout: '55%',
+      plugins: {
+        legend: { position: 'bottom' },
+        datalabels: {
+          color: '#fff',
+          font: { weight: '700', size: 12 },
+          formatter: (value) => {
+            const pct = sideTotal ? Math.round((value / sideTotal) * 100) : 0;
+            return `${value}\n${pct}%`;
+          }
+        }
+      }
     }
   });
 }
