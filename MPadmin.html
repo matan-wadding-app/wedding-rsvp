@@ -2016,7 +2016,7 @@ function fillMessageTemplatesExample() {
   const giftEl = document.getElementById('tpl-gift-reminder');
   if (!monthEl || !giftEl) return;
   monthEl.value =
-    `היי 👋 ${demoName}
+    `לכבוד: ${sanitizeGuestName(demoName)} 👋
 
 אנחנו — מתן ופריאל — מתחתנים
 בי״ג תמוז (28.6.26) שמחים להזמינך להשתתף בשמחתנו 🥂
@@ -2028,7 +2028,7 @@ ${base}/
 נשמח לראותך איתנו 🤍💍`;
 
   giftEl.value =
-    `היי 😊
+    `לכבוד: ${sanitizeGuestName(demoName)} 😊
 מתרגשים ממש לראות אותך בקרוב!
 
 למי שרוצה להסדיר מתנה מראש (כדי להימנע ממעטפות באירוע), אפשר כאן:
@@ -2039,8 +2039,8 @@ ${demoPersonal}
 
 function buildGiftReminderForGuest(g) {
   const link = `${siteBaseUrl()}/?t=${g.token}`;
-  const firstName = String(g.full_name || 'אורח').split(/\s+/)[0];
-  return `היי 😊 ${firstName}
+  const guestName = sanitizeGuestName(g.full_name);
+  return `לכבוד: ${guestName} 😊
 מתרגשים ממש לראות אותך בקרוב!
 
 למי שרוצה להסדיר מתנה מראש (כדי להימנע ממעטפות באירוע), אפשר כאן:
@@ -2480,12 +2480,17 @@ async function exportFreeCampaignReport() {
 // WhatsApp + SMS Bulk Contact System
 // ═══════════════════════════════════════════════════════════════════
 
+// Sanitize guest name: trim whitespace and escape angle brackets to prevent injection
+function sanitizeGuestName(name) {
+  return String(name || 'אורח/ת').trim().replace(/[<>]/g, '');
+}
+
 // Generate message template for a guest (קישור אישי עם טוקן)
 function buildInviteMessage(guest) {
   const token = guest.token || guest.id;
   const link = `${siteBaseUrl()}/?t=${token}`;
-  const fullName = guest.full_name || 'אורח/ת';
-  return `היי 👋 ${fullName}
+  const guestName = sanitizeGuestName(guest.full_name);
+  return `לכבוד: ${guestName} 👋
 
 אנחנו — מתן ופריאל — מתחתנים
 בי״ג תמוז (28.6.26) שמחים להזמינך להשתתף בשמחתנו 🥂

@@ -42,7 +42,9 @@
 
     const greeting = document.querySelector('[data-guest-greeting]');
     if (greeting) {
-      greeting.textContent = `היי ${guest.full_name.split(' ')[0]}!`;
+      // Use full name trimmed; basic-escape is handled by textContent (no innerHTML)
+      const safeName = String(guest.full_name || '').trim();
+      greeting.textContent = `לכבוד: ${safeName}`;
     }
   }
 
