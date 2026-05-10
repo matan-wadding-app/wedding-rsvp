@@ -1978,7 +1978,8 @@ function downloadFile(content, filename) {
 }
 
 function downloadTextFile(content, filename) {
-  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  // Prepend UTF-8 BOM so Windows Notepad / Excel open the file without garbling Hebrew/emoji
+  const blob = new Blob(['﻿' + content], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = filename; a.click();
@@ -2502,6 +2503,11 @@ ${link}
 נשמח לראותך איתנו 🤍💍`;
 }
 
+// Fallback for SMS gateways that cannot handle Unicode: replaces emoji with plain text
+function stripEmojis(text) {
+  return text.replace(/[\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27BF}]|[\uD800-\uDBFF][\uDC00-\uDFFF]/gu, '');
+}
+
 // Format phone for wa.me (international format)
 function formatPhoneIntl(phone) {
   const digits = (phone || '').replace(/\D/g, '');
@@ -2564,6 +2570,8 @@ function updateContactProgress() {
 }
 
 // Send via WhatsApp
+// encodeURIComponent ensures emojis and Hebrew are percent-encoded so WhatsApp
+// renders them correctly instead of showing black squares or question marks.
 function sendWhatsApp(guestId) {
   const g = allGuests.find(x => x.id === guestId);
   if (!g) return;
@@ -2576,7 +2584,12 @@ function sendWhatsApp(guestId) {
   setTimeout(() => { renderGuests(); updateContactProgress(); }, 500);
 }
 
-// Send via SMS
+// Send via SMS (opens native SMS app on iOS/Android)
+// encodeURIComponent handles Unicode/emoji in the sms: URI body.
+// NOTE: This uses the device's native SMS app — emojis work fine on modern iOS/Android.
+// If you integrate a bulk SMS gateway (Twilio, CELLACT, 019 etc.), set unicode=true
+// or data_coding=8 in the API request, otherwise the gateway may drop emojis.
+// If the provider cannot handle Unicode, call stripEmojis() on the message before sending.
 function sendSMS(guestId) {
   const g = allGuests.find(x => x.id === guestId);
   if (!g) return;
