@@ -29,6 +29,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+<!-- SheetJS: client-side XLSX/CSV parsing for the guest import flow -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="./config.js"></script>
 <style>
 :root {
@@ -615,6 +617,15 @@ tr:hover td { background: #faf7f2; }
   margin-bottom: 1rem;
 }
 
+/* ═════ Import modal preview table ═════ */
+#import-preview-table th,
+#import-preview-table td {
+  border: 1px solid var(--line);
+  padding: 0.3rem 0.6rem;
+  white-space: nowrap;
+}
+#import-preview-table th { background: var(--bg); font-weight: 600; }
+
 /* ═════ Responsive ═════ */
 @media (max-width: 768px) {
   main { padding: 1rem; }
@@ -754,6 +765,12 @@ tr:hover td { background: #faf7f2; }
 
       <div class="card">
         <h2 class="serif">הוספת אורח</h2>
+        <div style="display:flex; gap:0.75rem; align-items:center; margin-bottom:1rem; flex-wrap:wrap;">
+          <button type="button" class="btn btn-secondary" onclick="openImportModal()" title="ייבא אורחים מקובץ Excel / CSV">
+            📂 ייבא מ-Excel / CSV
+          </button>
+          <span class="muted" style="font-size:0.85rem;">מייבא קובץ XLSX או CSV עם עמודות שם, טלפון, קטגוריה ואימייל</span>
+        </div>
         <form id="addGuestForm">
           <div class="form-row">
             <div>
@@ -917,6 +934,50 @@ tr:hover td { background: #faf7f2; }
     </div>
 
   </main>
+</div>
+
+<!-- ═════ Import Excel / CSV Modal ═════ -->
+<div class="modal-backdrop" id="importModal" style="display:none;">
+  <div class="modal" style="max-width:720px; width:95vw;">
+    <h3 class="serif">📂 ייבוא אורחים מ-Excel / CSV</h3>
+
+    <!-- Step 1: File picker -->
+    <div id="import-step-1">
+      <p class="muted" style="margin-bottom:1rem;">בחר קובץ XLSX, XLS או CSV. שורת הכותרת נדרשת.</p>
+      <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleImportFile(this)">
+      <button class="btn btn-primary" onclick="document.getElementById('importFileInput').click()">בחר קובץ</button>
+      <button class="btn btn-secondary" style="margin-right:0.5rem;" onclick="closeImportModal()">ביטול</button>
+    </div>
+
+    <!-- Step 2: Preview + column mapping -->
+    <div id="import-step-2" style="display:none;">
+      <p class="muted" style="margin-bottom:0.75rem;">תצוגה מקדימה — 10 שורות ראשונות. מפה כל עמודה לשדה המתאים.</p>
+
+      <!-- Column mapping selects (injected by JS) -->
+      <div id="import-col-map" style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-bottom:1rem;"></div>
+
+      <div style="overflow-x:auto; margin-bottom:1rem;">
+        <table id="import-preview-table" style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+          <!-- populated by JS -->
+        </table>
+      </div>
+
+      <div style="display:flex; gap:0.75rem; justify-content:flex-end; flex-wrap:wrap;">
+        <button class="btn btn-secondary" onclick="resetImportModal()">חזור</button>
+        <button class="btn btn-primary" id="importDoBtn" onclick="doImport()">ייבא →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Report -->
+    <div id="import-step-3" style="display:none;">
+      <h4 style="margin-bottom:0.75rem;">דוח ייבוא</h4>
+      <div id="import-report" style="font-size:0.9rem; line-height:1.6;"></div>
+      <div style="display:flex; gap:0.75rem; justify-content:flex-end; margin-top:1rem;">
+        <button class="btn btn-secondary" onclick="resetImportModal()">ייבא קובץ נוסף</button>
+        <button class="btn btn-primary" onclick="closeImportModal()">סגור</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ═════ Link Modal ═════ -->
@@ -2695,6 +2756,275 @@ function downloadInviteMessagesBulkFile() {
   });
   downloadTextFile(body, `hodot-bulk-${exportBasenameStem()}.txt`);
   toast('קובץ הורד', 'success');
+}
+
+// Initial paint for campaign widget
+renderFreeCampaignStatus();
+
+// ═══════════════════════════════════════════════════════════════════
+// Excel / CSV Import Flow (Feature 3)
+// ═══════════════════════════════════════════════════════════════════
+
+/** Parsed rows from the uploaded file. Each element is a plain object keyed by header. */
+let importRows = [];
+/** Original header names from the file */
+let importHeaders = [];
+
+/** Normalize an Israeli phone number: strip non-digits, ensure it starts with +972 digits */
+function normalizePhone(raw) {
+  const digits = String(raw || '').replace(/\D/g, '');
+  if (!digits) return null;
+  if (digits.startsWith('972')) return digits;
+  if (digits.startsWith('0')) return '972' + digits.slice(1);
+  // bare 5x-xxxxxxx without leading 0
+  if (digits.length === 9 && digits.startsWith('5')) return '972' + digits;
+  return digits.length >= 10 ? digits : null;
+}
+
+/** Returns true when the phone string looks like a valid IL mobile number */
+function isValidPhone(p) {
+  if (!p) return false;
+  const d = p.replace(/\D/g, '');
+  // Accept 9725XXXXXXXX (12 digits) or 05XXXXXXXX (10 digits)
+  return /^(9725\d{8}|05\d{8})$/.test(d);
+}
+
+/** Open the import modal and reset to step 1 */
+function openImportModal() {
+  resetImportModal();
+  const el = document.getElementById('importModal');
+  el.style.display = 'flex';
+}
+
+/** Close and reset the import modal */
+function closeImportModal() {
+  const el = document.getElementById('importModal');
+  el.style.display = 'none';
+  resetImportModal();
+}
+
+/** Reset state back to step 1 without closing */
+function resetImportModal() {
+  importRows = [];
+  importHeaders = [];
+  document.getElementById('importFileInput').value = '';
+  document.getElementById('import-step-1').style.display = '';
+  document.getElementById('import-step-2').style.display = 'none';
+  document.getElementById('import-step-3').style.display = 'none';
+}
+
+/**
+ * Called when the user selects a file.
+ * Uses SheetJS to parse XLSX/CSV and move to step 2 with a preview.
+ */
+function handleImportFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      // Use the first sheet
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      // header:1 gives array-of-arrays; defval:'': empty cells become ''
+      const raw = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      if (!raw || raw.length < 2) {
+        toast('הקובץ ריק או חסר שורת כותרת', 'error');
+        return;
+      }
+      importHeaders = raw[0].map(String);
+      importRows = raw.slice(1).map(row => {
+        const obj = {};
+        importHeaders.forEach((h, i) => { obj[h] = String(row[i] ?? '').trim(); });
+        return obj;
+      }).filter(r => Object.values(r).some(v => v !== ''));
+
+      if (importRows.length === 0) {
+        toast('לא נמצאו שורות עם נתונים', 'error');
+        return;
+      }
+      renderImportPreview();
+    } catch (err) {
+      toast('שגיאה בקריאת הקובץ: ' + err.message, 'error');
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/** Field mapping labels shown to the user */
+const IMPORT_FIELDS = [
+  { key: 'name',     label: 'שם *',       required: true  },
+  { key: 'phone',    label: 'טלפון',      required: false },
+  { key: 'category', label: 'קטגוריה',    required: false },
+  { key: 'email',    label: 'אימייל',     required: false },
+];
+
+/** Common Hebrew/English header patterns for auto-detection */
+const HEADER_GUESSES = {
+  name:     /שם|name|full.?name|guest/i,
+  phone:    /טלפון|phone|mobile|tel|cell|נייד/i,
+  category: /קטגוריה|category|סוג|group/i,
+  email:    /אימייל|email|mail/i,
+};
+
+function guessField(header) {
+  for (const [field, rx] of Object.entries(HEADER_GUESSES)) {
+    if (rx.test(header)) return field;
+  }
+  return '';
+}
+
+/** Render the preview table and column-mapping selects */
+function renderImportPreview() {
+  document.getElementById('import-step-1').style.display = 'none';
+  document.getElementById('import-step-2').style.display = '';
+
+  // ── Column mapping selects ──
+  const mapEl = document.getElementById('import-col-map');
+  mapEl.innerHTML = importHeaders.map((h, i) => {
+    const guessed = guessField(h);
+    const opts = [
+      '<option value="">-- דלג --</option>',
+      ...IMPORT_FIELDS.map(f =>
+        `<option value="${f.key}" ${guessed === f.key ? 'selected' : ''}>${f.label}</option>`
+      )
+    ].join('');
+    return `
+      <div style="display:flex; flex-direction:column; gap:0.25rem; min-width:120px;">
+        <label style="font-size:0.78rem; font-weight:600; color:var(--ink-soft);">${escapeHtml(h)}</label>
+        <select class="import-col-select" data-col="${i}" style="font-size:0.82rem; padding:0.25rem 0.4rem;">${opts}</select>
+      </div>`;
+  }).join('');
+
+  // ── Preview table (first 10 rows) ──
+  const preview = importRows.slice(0, 10);
+  const tbl = document.getElementById('import-preview-table');
+  const headerHtml = '<tr>' + importHeaders.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr>';
+  const bodyHtml = preview.map(row =>
+    '<tr>' + importHeaders.map(h => `<td>${escapeHtml(row[h] ?? '')}</td>`).join('') + '</tr>'
+  ).join('');
+  tbl.innerHTML = `<thead>${headerHtml}</thead><tbody>${bodyHtml}</tbody>`;
+}
+
+/** Read the current column-mapping selections from the UI */
+function readColMapping() {
+  const map = {}; // field -> header name
+  document.querySelectorAll('.import-col-select').forEach(sel => {
+    if (sel.value) {
+      const colIndex = Number(sel.dataset.col);
+      map[sel.value] = importHeaders[colIndex];
+    }
+  });
+  return map;
+}
+
+/**
+ * Validates rows, deduplicates, and inserts into Supabase.
+ * Returns an import report with successes and failures.
+ */
+async function doImport() {
+  const btn = document.getElementById('importDoBtn');
+  btn.disabled = true;
+  btn.textContent = 'מייבא…';
+
+  try {
+    const colMap = readColMapping();
+    if (!colMap.name) {
+      toast('יש למפות לפחות את עמודת השם', 'error');
+      btn.disabled = false;
+      btn.textContent = 'ייבא →';
+      return;
+    }
+
+    // Fetch existing phones to deduplicate
+    const { data: existing } = await supa.from('guests').select('phone, full_name');
+    const existingPhones = new Set(
+      (existing || []).map(g => normalizePhone(g.phone)).filter(Boolean)
+    );
+
+    const successes = [];
+    const failures  = [];
+
+    for (const row of importRows) {
+      const name  = (row[colMap.name] || '').trim();
+      const raw   = colMap.phone ? (row[colMap.phone] || '') : '';
+      const cat   = colMap.category ? (row[colMap.category] || '').trim() : '';
+      const email = colMap.email    ? (row[colMap.email] || '').trim()    : '';
+
+      if (!name) {
+        failures.push({ row, reason: 'שם ריק' });
+        continue;
+      }
+
+      const phone = normalizePhone(raw);
+      if (raw && !isValidPhone(phone || raw)) {
+        failures.push({ row, reason: `מספר טלפון לא תקין: "${raw}"` });
+        continue;
+      }
+
+      if (phone && existingPhones.has(phone)) {
+        failures.push({ row, reason: `כפול — ${phone} כבר קיים` });
+        continue;
+      }
+
+      // Build insert payload; use default category when none provided
+      const payload = {
+        full_name: name,
+        phone: phone || null,
+        category: cat || 'ייבוא Excel',
+        invite_side: 'groom',
+      };
+      if (email) payload.email = email;
+
+      const { error } = await supa.from('guests').insert(payload);
+      if (error) {
+        failures.push({ row, reason: error.message });
+      } else {
+        successes.push(name);
+        if (phone) existingPhones.add(phone); // prevent intra-batch dupes
+      }
+    }
+
+    renderImportReport(successes, failures);
+    // Reload guest list so new rows appear immediately
+    await loadGuests();
+    renderGuests();
+    updateContactProgress();
+  } catch (err) {
+    toast('שגיאת ייבוא: ' + err.message, 'error');
+    console.error(err);
+    btn.disabled = false;
+    btn.textContent = 'ייבא →';
+  }
+}
+
+/** Show the import result in step 3 */
+function renderImportReport(successes, failures) {
+  document.getElementById('import-step-2').style.display = 'none';
+  document.getElementById('import-step-3').style.display = '';
+
+  const total = successes.length + failures.length;
+  let html = `<p><strong>ייבוא הסתיים:</strong> ${successes.length} הצלחות, ${failures.length} כשלונות מתוך ${total} שורות.</p>`;
+
+  if (successes.length) {
+    html += `<details open><summary style="cursor:pointer; font-weight:600; margin-top:0.75rem;">✅ נוספו (${successes.length})</summary><ul style="margin-top:0.5rem; padding-right:1.2rem;">` +
+      successes.map(n => `<li>${escapeHtml(n)}</li>`).join('') +
+      '</ul></details>';
+  }
+
+  if (failures.length) {
+    html += `<details open><summary style="cursor:pointer; font-weight:600; margin-top:0.75rem;">❌ נכשלו (${failures.length})</summary><ul style="margin-top:0.5rem; padding-right:1.2rem;">` +
+      failures.map(f => {
+        const name = f.row[importHeaders[0]] || '?';
+        return `<li>${escapeHtml(name)} — ${escapeHtml(f.reason)}</li>`;
+      }).join('') +
+      '</ul></details>';
+  }
+
+  document.getElementById('import-report').innerHTML = html;
+  toast(`ייבוא הסתיים: ${successes.length} נוספו`, successes.length ? 'success' : 'error');
 }
 
 // Initial paint for campaign widget
