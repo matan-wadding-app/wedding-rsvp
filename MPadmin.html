@@ -2078,7 +2078,7 @@ function fillMessageTemplatesExample() {
   const giftEl = document.getElementById('tpl-gift-reminder');
   if (!monthEl || !giftEl) return;
   monthEl.value =
-    `לכבוד: ${sanitizeGuestName(demoName)} 👋
+    `לכבוד ${sanitizeGuestName(demoName)} 🤍
 
 אנחנו — מתן ופריאל — מתחתנים
 בי״ג תמוז (28.6.26) שמחים להזמינך להשתתף בשמחתנו 🥂
@@ -2552,7 +2552,7 @@ function buildInviteMessage(guest) {
   const token = guest.token || guest.id;
   const link = `${siteBaseUrl()}/?t=${token}`;
   const guestName = sanitizeGuestName(guest.full_name);
-  return `לכבוד: ${guestName} 👋
+  return `לכבוד ${guestName} 🤍
 
 אנחנו — מתן ופריאל — מתחתנים
 בי״ג תמוז (28.6.26) שמחים להזמינך להשתתף בשמחתנו 🥂

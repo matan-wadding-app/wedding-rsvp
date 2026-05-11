@@ -17,7 +17,7 @@ function buildInviteMessage(guest) {
   const token = guest.token || guest.id;
   const link = `${siteBaseUrl()}/?t=${token}`;
   const guestName = sanitizeGuestName(guest.full_name);
-  return `לכבוד: ${guestName} 👋\n\nאנחנו — מתן ופריאל — מתחתנים\nבי״ג תמוז (28.6.26) שמחים להזמינך להשתתף בשמחתנו 🥂\n\nקישור לאישור הגעה:\n\n${link}\n\nנשמח לראותך איתנו 🤍💍`;
+  return `לכבוד ${guestName} 🤍\n\nאנחנו — מתן ופריאל — מתחתנים\nבי״ג תמוז (28.6.26) שמחים להזמינך להשתתף בשמחתנו 🥂\n\nקישור לאישור הגעה:\n\n${link}\n\nנשמח לראותך איתנו 🤍💍`;
 }
 
 // stripEmojis: fallback for SMS gateways that cannot handle Unicode
@@ -48,7 +48,7 @@ console.log(waUrl);
 
 // Verify the URL is a valid wa.me link
 console.assert(waUrl.startsWith('https://wa.me/972'), 'URL starts with wa.me/972');
-console.assert(waUrl.includes('%F0%9F%91%8B'), 'Emoji 👋 is percent-encoded in URL');
+console.assert(waUrl.includes('%F0%9F%A4%8D'), 'Emoji 🤍 is percent-encoded in URL');
 
 // Verify round-trip decode
 const decoded = decodeURIComponent(waUrl.split('?text=')[1]);
@@ -60,7 +60,7 @@ const smsTel = guest.phone.replace(/\D/g, '');
 const smsUrl = `sms:${smsTel}?body=${encodeURIComponent(msg)}`;
 console.log('\n=== SMS URI ===');
 console.log(smsUrl);
-console.assert(smsUrl.includes('%F0%9F%91%8B'), 'Emoji 👋 is percent-encoded in SMS URI');
+console.assert(smsUrl.includes('%F0%9F%A4%8D'), 'Emoji 🤍 is percent-encoded in SMS URI');
 console.log('✅ SMS URI correctly percent-encodes emoji');
 
 // Test with extra emojis: 😊 🎉 ❤️

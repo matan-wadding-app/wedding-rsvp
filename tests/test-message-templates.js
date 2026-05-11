@@ -15,7 +15,7 @@ function buildInviteMessage(guest) {
   const token = guest.token || guest.id;
   const link = `${siteBaseUrl()}/?t=${token}`;
   const guestName = sanitizeGuestName(guest.full_name);
-  return `לכבוד: ${guestName} 👋\n\nאנחנו — מתן ופריאל — מתחתנים\nבי״ג תמוז (28.6.26) שמחים להזמינך להשתתף בשמחתנו 🥂\n\nקישור לאישור הגעה:\n\n${link}\n\nנשמח לראותך איתנו 🤍💍`;
+  return `לכבוד ${guestName} 🤍\n\nאנחנו — מתן ופריאל — מתחתנים\nבי״ג תמוז (28.6.26) שמחים להזמינך להשתתף בשמחתנו 🥂\n\nקישור לאישור הגעה:\n\n${link}\n\nנשמח לראותך איתנו 🤍💍`;
 }
 
 function buildGiftReminderForGuest(g) {
@@ -55,7 +55,7 @@ console.log('\n=== buildInviteMessage ===');
 // Hebrew name
 {
   const msg = buildInviteMessage({ full_name: 'יעל כהן', token: 'abc123' });
-  assert(msg.startsWith('לכבוד: יעל כהן'), 'Hebrew name: starts with לכבוד: יעל כהן');
+  assert(msg.startsWith('לכבוד יעל כהן'), 'Hebrew name: starts with לכבוד יעל כהן');
   assert(!msg.includes('היי'), 'No old "היי" greeting');
   assert(msg.includes('abc123'), 'Token present in link');
   assert(msg.includes('🥂'), 'Emoji 🥂 preserved');
@@ -65,7 +65,7 @@ console.log('\n=== buildInviteMessage ===');
 {
   const longName = 'אלכסנדר יהושפט בן־דוד מן';
   const msg = buildInviteMessage({ full_name: longName, token: 'tok1' });
-  assert(msg.startsWith(`לכבוד: ${longName}`), 'Long name preserved verbatim');
+  assert(msg.startsWith(`לכבוד ${longName}`), 'Long name preserved verbatim');
 }
 
 // Name with diacritics (nikud)
@@ -78,7 +78,7 @@ console.log('\n=== buildInviteMessage ===');
 // Name with leading/trailing whitespace → trimmed
 {
   const msg = buildInviteMessage({ full_name: '  דנה   ', token: 'tok3' });
-  assert(msg.startsWith('לכבוד: דנה'), 'Name trimmed of surrounding whitespace');
+  assert(msg.startsWith('לכבוד דנה'), 'Name trimmed of surrounding whitespace');
 }
 
 // XSS-like name: angle brackets stripped
@@ -90,7 +90,7 @@ console.log('\n=== buildInviteMessage ===');
 // Null name → fallback
 {
   const msg = buildInviteMessage({ full_name: null, token: 'tok5' });
-  assert(msg.startsWith('לכבוד: אורח/ת'), 'Null name falls back to אורח/ת');
+  assert(msg.startsWith('לכבוד אורח/ת'), 'Null name falls back to אורח/ת');
 }
 
 console.log('\n=== buildGiftReminderForGuest ===');
