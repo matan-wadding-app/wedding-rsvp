@@ -14,10 +14,13 @@ function normalizePhone(raw) {
   return digits.length >= 10 ? digits : null;
 }
 
-function isValidPhone(p) {
-  if (!p) return false;
-  const d = String(p).replace(/\D/g, '');
-  return /^(9725\d{8}|05\d{8})$/.test(d);
+function isValidIsraelMobile(cell) {
+  const d = String(cell || '').replace(/\D/g, '');
+  return /^05[0-9]{8}$/.test(d) || /^9725[0-9]{8}$/.test(d);
+}
+
+function sanitizeGuestName(name) {
+  return String(name || 'אורח/ת').trim().replace(/[<>]/g, '');
 }
 
 /**
@@ -30,21 +33,27 @@ function simulateImport(rows, colMap, existingPhones = new Set()) {
   const seenPhones = new Set(existingPhones);
 
   for (const row of rows) {
-    const name  = (row[colMap.name] || '').trim();
-    const raw   = colMap.phone ? (row[colMap.phone] || '') : '';
-    const cat   = colMap.category ? (row[colMap.category] || '').trim() : '';
+    const rawName = (row[colMap.name] || '').trim();
+    const raw     = colMap.phone ? (row[colMap.phone] || '') : '';
+    const cat     = colMap.category ? (row[colMap.category] || '').trim() : '';
+    const sideRaw = colMap.side  ? (row[colMap.side]  || '').trim() : '';
 
-    if (!name) { failures.push({ row, reason: 'שם ריק' }); continue; }
+    if (!rawName) { failures.push({ row, reason: 'שם ריק' }); continue; }
+
+    const name = sanitizeGuestName(rawName);
 
     const phone = normalizePhone(raw);
-    if (raw && !isValidPhone(phone || raw)) {
+    if (raw && !isValidIsraelMobile(phone || raw)) {
       failures.push({ row, reason: `מספר טלפון לא תקין: "${raw}"` }); continue;
     }
     if (phone && seenPhones.has(phone)) {
       failures.push({ row, reason: `כפול — ${phone} כבר קיים` }); continue;
     }
 
-    successes.push({ name, phone, category: cat || 'ייבוא Excel' });
+    const sideNorm = sideRaw.toLowerCase();
+    const invite_side = /כלה|bride/.test(sideNorm) ? 'bride' : 'groom';
+
+    successes.push({ name, phone, category: cat || 'ייבוא Excel', invite_side });
     if (phone) seenPhones.add(phone);
   }
   return { successes, failures };
@@ -67,13 +76,13 @@ assert(normalizePhone('')   === null, 'empty → null');
 assert(normalizePhone(null) === null, 'null → null');
 assert(normalizePhone('abc')  === null, 'non-numeric → null');
 
-console.log('\n=== isValidPhone ===');
-assert(isValidPhone('0521234567'),     'local 05… valid');
-assert(isValidPhone('972521234567'),   '972… valid');
-assert(!isValidPhone('0201234567'),    '02… landline invalid');
-assert(!isValidPhone('abc'),           'letters invalid');
-assert(!isValidPhone('052123'),        'too short invalid');
-assert(!isValidPhone(''),              'empty invalid');
+console.log('\n=== isValidIsraelMobile ===');
+assert(isValidIsraelMobile('0521234567'),     'local 05… valid');
+assert(isValidIsraelMobile('972521234567'),   '972… valid');
+assert(!isValidIsraelMobile('0201234567'),    '02… landline invalid');
+assert(!isValidIsraelMobile('abc'),           'letters invalid');
+assert(!isValidIsraelMobile('052123'),        'too short invalid');
+assert(!isValidIsraelMobile(''),              'empty invalid');
 
 console.log('\n=== simulateImport — happy path ===');
 {
@@ -136,6 +145,42 @@ console.log('\n=== simulateImport — default category assigned ===');
   const rows = [{ 'שם': 'ללא קטגוריה', 'טלפון': '0521111111' }];
   const { successes } = simulateImport(rows, { name: 'שם', phone: 'טלפון' });
   assert(successes[0].category === 'ייבוא Excel', 'default category assigned when empty');
+}
+
+console.log('\n=== simulateImport — sanitizeGuestName applied to imported names ===');
+{
+  const rows = [{ 'שם': '<script>evil</script>', 'טלפון': '0521111111' }];
+  const { successes, failures } = simulateImport(rows, { name: 'שם', phone: 'טלפון' });
+  assert(successes.length === 1, 'XSS-like name does not cause a failure (row accepted)');
+  assert(!successes[0].name.includes('<'), 'angle brackets stripped from name');
+  assert(successes[0].name.includes('evil'), 'text content of name kept');
+}
+{
+  const rows = [{ 'שם': '  יעל כהן  ', 'טלפון': '0521111112' }];
+  const { successes } = simulateImport(rows, { name: 'שם', phone: 'טלפון' });
+  assert(successes[0].name === 'יעל כהן', 'surrounding whitespace trimmed by sanitizeGuestName');
+}
+
+console.log('\n=== simulateImport — invite_side mapping ===');
+{
+  const rows = [
+    { 'שם': 'חתן', 'טלפון': '0521111113', 'צד': 'groom' },
+    { 'שם': 'כלה', 'טלפון': '0521111114', 'צד': 'bride' },
+    { 'שם': 'כלהית', 'טלפון': '0521111115', 'צד': 'כלה' },
+    { 'שם': 'ברירת מחדל', 'טלפון': '0521111116', 'צד': '' },
+  ];
+  const colMap = { name: 'שם', phone: 'טלפון', side: 'צד' };
+  const { successes } = simulateImport(rows, colMap);
+  assert(successes[0].invite_side === 'groom',  'explicit groom → groom');
+  assert(successes[1].invite_side === 'bride',  'English bride → bride');
+  assert(successes[2].invite_side === 'bride',  'Hebrew כלה → bride');
+  assert(successes[3].invite_side === 'groom',  'empty side → groom (default)');
+}
+{
+  // No side column mapped → all default to groom
+  const rows = [{ 'שם': 'מישהו', 'טלפון': '0521111117' }];
+  const { successes } = simulateImport(rows, { name: 'שם', phone: 'טלפון' });
+  assert(successes[0].invite_side === 'groom', 'no side column → defaults to groom');
 }
 
 console.log(`\n─────────────────────────────`);

@@ -2781,14 +2781,6 @@ function normalizePhone(raw) {
   return digits.length >= 10 ? digits : null;
 }
 
-/** Returns true when the phone string looks like a valid IL mobile number */
-function isValidPhone(p) {
-  if (!p) return false;
-  const d = p.replace(/\D/g, '');
-  // Accept 9725XXXXXXXX (12 digits) or 05XXXXXXXX (10 digits)
-  return /^(9725\d{8}|05\d{8})$/.test(d);
-}
-
 /** Open the import modal and reset to step 1 */
 function openImportModal() {
   resetImportModal();
@@ -2855,16 +2847,18 @@ function handleImportFile(input) {
 
 /** Field mapping labels shown to the user */
 const IMPORT_FIELDS = [
-  { key: 'name',     label: 'שם *',       required: true  },
-  { key: 'phone',    label: 'טלפון',      required: false },
-  { key: 'category', label: 'קטגוריה',    required: false },
-  { key: 'email',    label: 'אימייל',     required: false },
+  { key: 'name',     label: 'שם *',           required: true  },
+  { key: 'phone',    label: 'טלפון',          required: false },
+  { key: 'side',     label: 'צד (חתן/כלה)',   required: false },
+  { key: 'category', label: 'קטגוריה',        required: false },
+  { key: 'email',    label: 'אימייל',         required: false },
 ];
 
 /** Common Hebrew/English header patterns for auto-detection */
 const HEADER_GUESSES = {
   name:     /שם|name|full.?name|guest/i,
   phone:    /טלפון|phone|mobile|tel|cell|נייד/i,
+  side:     /צד|side|קירבה|חתן|כלה|groom|bride/i,
   category: /קטגוריה|category|סוג|group/i,
   email:    /אימייל|email|mail/i,
 };
@@ -2948,18 +2942,22 @@ async function doImport() {
     const failures  = [];
 
     for (const row of importRows) {
-      const name  = (row[colMap.name] || '').trim();
-      const raw   = colMap.phone ? (row[colMap.phone] || '') : '';
-      const cat   = colMap.category ? (row[colMap.category] || '').trim() : '';
-      const email = colMap.email    ? (row[colMap.email] || '').trim()    : '';
+      const rawName = (row[colMap.name] || '').trim();
+      const raw     = colMap.phone ? (row[colMap.phone] || '') : '';
+      const cat     = colMap.category ? (row[colMap.category] || '').trim() : '';
+      const email   = colMap.email ? (row[colMap.email] || '').trim() : '';
+      const sideRaw = colMap.side  ? (row[colMap.side]  || '').trim() : '';
 
-      if (!name) {
+      if (!rawName) {
         failures.push({ row, reason: 'שם ריק' });
         continue;
       }
 
+      // Apply same sanitization used in messaging so <> can't reach the DB
+      const name = sanitizeGuestName(rawName);
+
       const phone = normalizePhone(raw);
-      if (raw && !isValidPhone(phone || raw)) {
+      if (raw && !isValidIsraelMobile(phone || raw)) {
         failures.push({ row, reason: `מספר טלפון לא תקין: "${raw}"` });
         continue;
       }
@@ -2969,12 +2967,15 @@ async function doImport() {
         continue;
       }
 
-      // Build insert payload; use default category when none provided
+      // Resolve invite_side from mapped column, fallback to 'groom'
+      const sideNorm = sideRaw.toLowerCase();
+      const invite_side = /כלה|bride/.test(sideNorm) ? 'bride' : 'groom';
+
       const payload = {
         full_name: name,
         phone: phone || null,
         category: cat || 'ייבוא Excel',
-        invite_side: 'groom',
+        invite_side,
       };
       if (email) payload.email = email;
 
