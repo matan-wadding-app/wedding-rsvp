@@ -11,11 +11,16 @@ function sanitizeGuestName(name) {
   return String(name || 'אורח/ת').trim().replace(/[<>]/g, '');
 }
 
+function isCouple(name) {
+  return /\sו\S/.test(name) || name.includes('&');
+}
+
 function buildInviteMessage(guest) {
   const token = guest.token || guest.id;
   const link = `${siteBaseUrl()}/?t=${token}`;
   const guestName = sanitizeGuestName(guest.full_name);
-  return `לכבוד ${guestName} 🤍\n\nאנחנו — מתן ופריאל — מתחתנים\nבי״ג תמוז (28.6.26) שמחים להזמינך להשתתף בשמחתנו 🥂\n\nקישור לאישור הגעה:\n\n${link}\n\nנשמח לראותך איתנו 🤍💍`;
+  const inviteVerb = isCouple(guestName) ? 'להזמינכם' : 'להזמינך';
+  return `לכבוד ${guestName} 🤍\n\nאנחנו — מתן ופריאל — מתחתנים\nבי״ג תמוז (28.6.26) שמחים ${inviteVerb} להשתתף בשמחתנו 🥂\n\nקישור לאישור הגעה:\n\n${link}\n\nנשמח לראותך איתנו 🤍💍`;
 }
 
 function buildGiftReminderForGuest(g) {
@@ -91,6 +96,41 @@ console.log('\n=== buildInviteMessage ===');
 {
   const msg = buildInviteMessage({ full_name: null, token: 'tok5' });
   assert(msg.startsWith('לכבוד אורח/ת'), 'Null name falls back to אורח/ת');
+}
+
+console.log('\n=== isCouple / plural verb ===');
+
+// Single name → singular להזמינך
+{
+  const msg = buildInviteMessage({ full_name: 'יעל כהן', token: 'sing1' });
+  assert(msg.includes('להזמינך'), 'Single name: uses singular להזמינך');
+  assert(!msg.includes('להזמינכם'), 'Single name: no plural form');
+}
+
+// Couple with Hebrew ו conjunction → plural להזמינכם
+{
+  const msg = buildInviteMessage({ full_name: 'איתמר ומרים', token: 'cpl1' });
+  assert(msg.includes('להזמינכם'), 'Hebrew ו couple: uses plural להזמינכם');
+  assert(!msg.includes('להזמינך '), 'Hebrew ו couple: no singular form');
+}
+
+// Couple with & → plural להזמינכם
+{
+  const msg = buildInviteMessage({ full_name: 'David & Sarah', token: 'cpl2' });
+  assert(msg.includes('להזמינכם'), '& couple: uses plural להזמינכם');
+}
+
+// Single name starting with ו (e.g. ורד) — NOT a couple
+{
+  const msg = buildInviteMessage({ full_name: 'ורד כהן', token: 'sing2' });
+  assert(msg.includes('להזמינך'), 'Name starting with ו (ורד) stays singular');
+  assert(!msg.includes('להזמינכם'), 'Name starting with ו (ורד): no plural');
+}
+
+// Three-word couple name
+{
+  const msg = buildInviteMessage({ full_name: 'משה ורחל לוי', token: 'cpl3' });
+  assert(msg.includes('להזמינכם'), 'Three-word couple name: plural');
 }
 
 console.log('\n=== buildGiftReminderForGuest ===');

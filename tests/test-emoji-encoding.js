@@ -13,11 +13,16 @@ function sanitizeGuestName(name) {
   return String(name || 'אורח/ת').trim().replace(/[<>]/g, '');
 }
 
+function isCouple(name) {
+  return /\sו\S/.test(name) || name.includes('&');
+}
+
 function buildInviteMessage(guest) {
   const token = guest.token || guest.id;
   const link = `${siteBaseUrl()}/?t=${token}`;
   const guestName = sanitizeGuestName(guest.full_name);
-  return `לכבוד ${guestName} 🤍\n\nאנחנו — מתן ופריאל — מתחתנים\nבי״ג תמוז (28.6.26) שמחים להזמינך להשתתף בשמחתנו 🥂\n\nקישור לאישור הגעה:\n\n${link}\n\nנשמח לראותך איתנו 🤍💍`;
+  const inviteVerb = isCouple(guestName) ? 'להזמינכם' : 'להזמינך';
+  return `לכבוד ${guestName} 🤍\n\nאנחנו — מתן ופריאל — מתחתנים\nבי״ג תמוז (28.6.26) שמחים ${inviteVerb} להשתתף בשמחתנו 🥂\n\nקישור לאישור הגעה:\n\n${link}\n\nנשמח לראותך איתנו 🤍💍`;
 }
 
 // stripEmojis: fallback for SMS gateways that cannot handle Unicode

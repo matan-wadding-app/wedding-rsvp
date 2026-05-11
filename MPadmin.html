@@ -2077,11 +2077,13 @@ function fillMessageTemplatesExample() {
   const monthEl = document.getElementById('tpl-month-before');
   const giftEl = document.getElementById('tpl-gift-reminder');
   if (!monthEl || !giftEl) return;
+  const demoGuestName = sanitizeGuestName(demoName);
+  const demoInviteVerb = isCouple(demoGuestName) ? 'להזמינכם' : 'להזמינך';
   monthEl.value =
-    `לכבוד ${sanitizeGuestName(demoName)} 🤍
+    `לכבוד ${demoGuestName} 🤍
 
 אנחנו — מתן ופריאל — מתחתנים
-בי״ג תמוז (28.6.26) שמחים להזמינך להשתתף בשמחתנו 🥂
+בי״ג תמוז (28.6.26) שמחים ${demoInviteVerb} להשתתף בשמחתנו 🥂
 
 קישור לאישור הגעה:
 
@@ -2547,15 +2549,21 @@ function sanitizeGuestName(name) {
   return String(name || 'אורח/ת').trim().replace(/[<>]/g, '');
 }
 
+// Detect couple names ("איתמר ומרים", "Name & Name") to pick singular/plural verb
+function isCouple(name) {
+  return /\sו\S/.test(name) || name.includes('&');
+}
+
 // Generate message template for a guest (קישור אישי עם טוקן)
 function buildInviteMessage(guest) {
   const token = guest.token || guest.id;
   const link = `${siteBaseUrl()}/?t=${token}`;
   const guestName = sanitizeGuestName(guest.full_name);
+  const inviteVerb = isCouple(guestName) ? 'להזמינכם' : 'להזמינך';
   return `לכבוד ${guestName} 🤍
 
 אנחנו — מתן ופריאל — מתחתנים
-בי״ג תמוז (28.6.26) שמחים להזמינך להשתתף בשמחתנו 🥂
+בי״ג תמוז (28.6.26) שמחים ${inviteVerb} להשתתף בשמחתנו 🥂
 
 קישור לאישור הגעה:
 
