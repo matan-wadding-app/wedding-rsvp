@@ -758,6 +758,7 @@ tr:hover td { background: #faf7f2; }
           <button class="btn btn-danger" onclick="clearFreeCampaign()">🧹 אפס קמפיין</button>
           <button class="btn btn-secondary" onclick="downloadInviteMessagesBulkFile()">⬇ הורד קובץ הודעות (כל האורחים)</button>
         </div>
+        <p id="bit-link-banner" class="muted" style="display:none; margin-bottom:0.75rem; font-size:0.82rem;">קישור Bit שיופיע לאורחים בלינק שתשלח/י: <a id="bit-link-anchor" href="#" target="_blank" rel="noopener noreferrer" dir="ltr" style="word-break:break-all;"></a></p>
         <div id="freeCampaignStatus" class="card" style="margin:0 0 0.8rem 0; padding:1rem; background:#fcfbf8;"></div>
         <div class="contact-progress" id="contactProgress"></div>
       </div>
@@ -1020,6 +1021,9 @@ const CATEGORY_PRESETS = [
 ];
 const CATEGORY_OTHER = '__other__';
 
+const PRIEL_ADMIN_PHONES = new Set(['0526353006', '0545691744', '0523604474', '0542572587']);
+let currentAdminPhone = '';
+
 let statusPieChart = null;
 let sidePieChart = null;
 let chartPluginsRegistered = false;
@@ -1090,6 +1094,7 @@ function showApp() {
   if (!isAppVisible) {
     isAppVisible = true;
     refreshAll();
+    fetchAdminPhone();
   }
 }
 
@@ -1105,6 +1110,23 @@ async function logout() {
   await supa.auth.signOut();
   showLogin();
   toast('התנתקת בהצלחה', 'success');
+}
+
+function updateBitBanner() {
+  const banner = document.getElementById('bit-link-banner');
+  const anchor = document.getElementById('bit-link-anchor');
+  if (!banner || !anchor) return;
+  const url = getAdminBitUrl(currentAdminPhone);
+  anchor.href = url;
+  anchor.textContent = url;
+  banner.style.display = '';
+}
+
+async function fetchAdminPhone() {
+  const { data, error } = await supa.auth.getUser();
+  if (error || !data?.user) return;
+  currentAdminPhone = data.user.phone || data.user.user_metadata?.phone || '';
+  updateBitBanner();
 }
 
 async function bootstrapAuth() {
@@ -1265,6 +1287,19 @@ function exportBasenameStem() {
 function siteBaseUrl() {
   const u = (WEDDING_CONFIG.SITE_URL || '').trim();
   return u.replace(/\/+$/, '');
+}
+
+function getAdminBitUrl(phone) {
+  const d = String(phone || '').replace(/\D/g, '');
+  const local = d.startsWith('972') ? '0' + d.slice(3) : d;
+  return PRIEL_ADMIN_PHONES.has(local)
+    ? WEDDING_CONFIG.BIT_PAY_ME_URL_BRIDE
+    : WEDDING_CONFIG.BIT_PAY_ME_URL;
+}
+
+function senderParam() {
+  const d = (currentAdminPhone || '').replace(/\D/g, '');
+  return d ? `&sender=${d}` : '';
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1762,7 +1797,7 @@ async function saveGuestRow(id) {
 function showLink(id) {
   const g = allGuests.find(x => x.id === id);
   currentGuestForLink = g;
-  const url = `${WEDDING_CONFIG.SITE_URL}?t=${g.token}`;
+  const url = `${WEDDING_CONFIG.SITE_URL}?t=${g.token}${senderParam()}`;
   document.getElementById('linkGuestName').textContent = `${g.full_name} · קירבה: ${sideLabelHeGuest(g)} · ${g.category}`;
   document.getElementById('linkUrl').value = url;
   document.getElementById('linkMessage').value = buildInviteMessage(g);
@@ -2104,7 +2139,7 @@ ${demoPersonal}
 }
 
 function buildGiftReminderForGuest(g) {
-  const link = `${siteBaseUrl()}/?t=${g.token}`;
+  const link = `${siteBaseUrl()}/?t=${g.token}${senderParam()}`;
   const guestName = sanitizeGuestName(g.full_name);
   return `לכבוד: ${guestName} 😊
 מתרגשים ממש לראות אותך בקרוב!
@@ -2559,7 +2594,7 @@ function isCouple(name) {
 // Generate message template for a guest (קישור אישי עם טוקן)
 function buildInviteMessage(guest) {
   const token = guest.token || guest.id;
-  const link = `${siteBaseUrl()}/?t=${token}`;
+  const link = `${siteBaseUrl()}/?t=${token}${senderParam()}`;
   const guestName = sanitizeGuestName(guest.full_name);
   const couple = isCouple(guestName);
   const inviteVerb = couple ? 'להזמינכם' : 'להזמינך';

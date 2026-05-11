@@ -539,6 +539,8 @@ const sideParamRaw = String(urlParams.get('side') || '').toLowerCase();
 const forcedInviteSide =
     sideParamRaw === 'bri' ? 'bride' :
     sideParamRaw === 'gro' ? 'groom' : null;
+const senderPhone = String(urlParams.get('sender') || '').replace(/\D/g, '');
+const PRIEL_ADMIN_PHONES = new Set(['0526353006', '0545691744', '0523604474', '0542572587']);
 const MAX_RSVP_GUESTS = 8;
 
 function isRpcMissing(error) {
@@ -868,6 +870,10 @@ function getBitPayMeUrlForGuest(guest) {
     const cfg = window.WEDDING_CONFIG || {};
     const groom = String(cfg.BIT_PAY_ME_URL || cfg.BIT_PAY_ME_URL_GROOM || '').trim();
     const bride = String(cfg.BIT_PAY_ME_URL_BRIDE || '').trim();
+    if (senderPhone) {
+        const local = senderPhone.startsWith('972') ? '0' + senderPhone.slice(3) : senderPhone;
+        if (PRIEL_ADMIN_PHONES.has(local) && bride) return bride;
+    }
     if (forcedInviteSide === 'bride' && bride) return bride;
     if (forcedInviteSide === 'groom') return groom;
     if (guest && guest.invite_side === 'bride' && bride) return bride;
