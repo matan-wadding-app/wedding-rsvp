@@ -19,8 +19,10 @@ function buildInviteMessage(guest) {
   const token = guest.token || guest.id;
   const link = `${siteBaseUrl()}/?t=${token}`;
   const guestName = sanitizeGuestName(guest.full_name);
-  const inviteVerb = isCouple(guestName) ? 'להזמינכם' : 'להזמינך';
-  return `לכבוד ${guestName} 🤍\n\nאנחנו — מתן ופריאל — מתחתנים\nבי״ג תמוז (28.6.26) שמחים ${inviteVerb} להשתתף בשמחתנו 🥂\n\nקישור לאישור הגעה:\n\n${link}\n\nנשמח לראותך איתנו 🤍💍`;
+  const couple = isCouple(guestName);
+  const inviteVerb = couple ? 'להזמינכם' : 'להזמינך';
+  const seeVerb = couple ? 'נשמח לראותכם' : 'נשמח לראותך';
+  return `לכבוד ${guestName} 🤍\n\nאנחנו — מתן ופריאל — מתחתנים\nבי״ג תמוז (28.6.26) שמחים ${inviteVerb} להשתתף בשמחתנו 🥂\n\nקישור לאישור הגעה:\n\n${link}\n\n${seeVerb} איתנו 🤍💍`;
 }
 
 function buildGiftReminderForGuest(g) {
@@ -131,6 +133,26 @@ console.log('\n=== isCouple / plural verb ===');
 {
   const msg = buildInviteMessage({ full_name: 'משה ורחל לוי', token: 'cpl3' });
   assert(msg.includes('להזמינכם'), 'Three-word couple name: plural');
+}
+
+// Closing line: singular נשמח לראותך for individual
+{
+  const msg = buildInviteMessage({ full_name: 'יעל כהן', token: 'see1' });
+  assert(msg.includes('נשמח לראותך איתנו'), 'Single name: closing uses נשמח לראותך');
+  assert(!msg.includes('נשמח לראותכם'), 'Single name: no plural closing');
+}
+
+// Closing line: plural נשמח לראותכם for couple
+{
+  const msg = buildInviteMessage({ full_name: 'איתמר ומרים', token: 'see2' });
+  assert(msg.includes('נשמח לראותכם איתנו'), 'Couple: closing uses נשמח לראותכם');
+  assert(!msg.includes('נשמח לראותך '), 'Couple: no singular closing');
+}
+
+// Closing line: plural via & couple
+{
+  const msg = buildInviteMessage({ full_name: 'Tom & Sarah', token: 'see3' });
+  assert(msg.includes('נשמח לראותכם איתנו'), '& couple: closing uses נשמח לראותכם');
 }
 
 console.log('\n=== buildGiftReminderForGuest ===');

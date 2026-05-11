@@ -21,8 +21,10 @@ function buildInviteMessage(guest) {
   const token = guest.token || guest.id;
   const link = `${siteBaseUrl()}/?t=${token}`;
   const guestName = sanitizeGuestName(guest.full_name);
-  const inviteVerb = isCouple(guestName) ? 'להזמינכם' : 'להזמינך';
-  return `לכבוד ${guestName} 🤍\n\nאנחנו — מתן ופריאל — מתחתנים\nבי״ג תמוז (28.6.26) שמחים ${inviteVerb} להשתתף בשמחתנו 🥂\n\nקישור לאישור הגעה:\n\n${link}\n\nנשמח לראותך איתנו 🤍💍`;
+  const couple = isCouple(guestName);
+  const inviteVerb = couple ? 'להזמינכם' : 'להזמינך';
+  const seeVerb = couple ? 'נשמח לראותכם' : 'נשמח לראותך';
+  return `לכבוד ${guestName} 🤍\n\nאנחנו — מתן ופריאל — מתחתנים\nבי״ג תמוז (28.6.26) שמחים ${inviteVerb} להשתתף בשמחתנו 🥂\n\nקישור לאישור הגעה:\n\n${link}\n\n${seeVerb} איתנו 🤍💍`;
 }
 
 // stripEmojis: fallback for SMS gateways that cannot handle Unicode

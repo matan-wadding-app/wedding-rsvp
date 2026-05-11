@@ -2078,7 +2078,9 @@ function fillMessageTemplatesExample() {
   const giftEl = document.getElementById('tpl-gift-reminder');
   if (!monthEl || !giftEl) return;
   const demoGuestName = sanitizeGuestName(demoName);
-  const demoInviteVerb = isCouple(demoGuestName) ? 'להזמינכם' : 'להזמינך';
+  const demoCouple = isCouple(demoGuestName);
+  const demoInviteVerb = demoCouple ? 'להזמינכם' : 'להזמינך';
+  const demoSeeVerb = demoCouple ? 'נשמח לראותכם' : 'נשמח לראותך';
   monthEl.value =
     `לכבוד ${demoGuestName} 🤍
 
@@ -2089,7 +2091,7 @@ function fillMessageTemplatesExample() {
 
 ${base}/
 
-נשמח לראותך איתנו 🤍💍`;
+${demoSeeVerb} איתנו 🤍💍`;
 
   giftEl.value =
     `לכבוד: ${sanitizeGuestName(demoName)} 😊
@@ -2559,7 +2561,9 @@ function buildInviteMessage(guest) {
   const token = guest.token || guest.id;
   const link = `${siteBaseUrl()}/?t=${token}`;
   const guestName = sanitizeGuestName(guest.full_name);
-  const inviteVerb = isCouple(guestName) ? 'להזמינכם' : 'להזמינך';
+  const couple = isCouple(guestName);
+  const inviteVerb = couple ? 'להזמינכם' : 'להזמינך';
+  const seeVerb = couple ? 'נשמח לראותכם' : 'נשמח לראותך';
   return `לכבוד ${guestName} 🤍
 
 אנחנו — מתן ופריאל — מתחתנים
@@ -2569,7 +2573,7 @@ function buildInviteMessage(guest) {
 
 ${link}
 
-נשמח לראותך איתנו 🤍💍`;
+${seeVerb} איתנו 🤍💍`;
 }
 
 // Fallback for SMS gateways that cannot handle Unicode: replaces emoji with plain text
